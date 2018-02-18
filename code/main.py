@@ -9,7 +9,7 @@ from w2v_custom import W2VCustom
 from w2v_glove import W2VGlove
 
 import utils
-import db
+import dal
 
 
 if __name__ == '__main__':
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     w2v = W2VCustom()
     w2v = W2VGlove()
 
-    emails = db.get_emails(NUM_EMAILS)
+    emails = dal.get_emails(NUM_EMAILS)
     w2v.train(emails)
     model.train(emails, w2v)
 
