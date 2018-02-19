@@ -1,56 +1,76 @@
+import os
+
 from gensim.scripts.glove2word2vec import glove2word2vec
 from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
 
+from w2v import W2V
 
-class w2v:
 
-	#input and output vector file name
-	input_glove_trained_vectors = 'resources/glove50d.txt'
-	output_glove2word2vec = 'resources/glove2word2vec50d'
+PRETRAINED_DIR = 'resources/glove.6B.50d.txt'
+GENSIM_GLOVE_DIR = 'resources/glove.gensim.6B.50d.txt'
+W2V_GLOVE_MODEL_DIR = 'models/glove_model.bin'
+VERBOSE = False
 
-	def __init__(self):
-		#converting to word2vec format
-		glove2word2vec(self.input_glove_trained_vectors, self.output_glove2word2vec)
 
-	def load(self, filename):
-		#to load pretrained vectors for word
-		self.glove_model = KeyedVectors.load_word2vec_format(filename, binary=False)
-		return self.glove_model
+class W2VGlove(W2V):
+    def __init__(self):
+        # Check if the word2vec model exists
+        if os.path.exists(W2V_GLOVE_MODEL_DIR):
+            self.load(W2V_GLOVE_MODEL_DIR)
+        else:
+            if not os.path.exists(PRETRAINED_DIR):
+                raise Exception('Pretrained glove vector file not found:', PRETRAINED_DIR)
+            if not os.path.exists(GENSIM_GLOVE_DIR):
+                # This adds a header line containing number of vectors and dimensionality
+                glove2word2vec(PRETRAINED_DIR, GENSIM_GLOVE_DIR)
+            # KeyedVectors superclasses Word2Vec
+            self.glove_model = KeyedVectors.load_word2vec_format(GENSIM_GLOVE_DIR, binary=False)
+            self.save(W2V_GLOVE_MODEL_DIR)
 
-# result = model.most_similar(positive=['dog', 'cow'], negative=['puppy'], topn=1)
-# print(result)
+    def load(self, filename):
+        # to load pretrained vectors for word
+        self.glove_model = KeyedVectors.load(filename)
 
-	def save(self, filename):
-		#to save model
-		self.glove_model.save(filename)
+    def save(self, filename):
+        # to save model
+        self.glove_model.save(filename)
 
-	def get_word(self, word):
-		return self.glove_model[word]
+    def get_word(self, word):
+        if word in self.glove_model:
+            return self.glove_model[word]
+        else:
+            if VERBOSE:
+                print 'Word not found:', word
+            # We don't raise an exception so that the client need not have to handle it
+            return None
 
-#to load already saved model
-# loaded_model = Word2Vec.load('glove_model.bin')
-# print(loaded_model['sentence'])
+    def get_sentence(self, sentence):
+        words = sentence.split()
+        vectors = [self.get_word(word) for word in words if not self.get_word(word) is None]
+        return vectors
+
+    def train(self, emails):
+        # Pretrained GloVe model is not fine-tuned (for now)
+        pass
+
 
 def main():
+    model = W2VGlove()
 
-	GloVe_model = w2v()
+    # checking loaded_model
+    print(model.glove_model['word'])
 
-	#loading model
-	loaded_model = GloVe_model.load('resources/glove2word2vec50d')
+    # checking for get_word
+    print(model.get_word('abacadavrab'))
 
-	#checking loaded_model
-	print(loaded_model['word'])
+    # checking for get_sentence
+    sentence = model.get_sentence('abacadavrab is a word that is not present in the glove model')
+    print(len(sentence))
 
-	#saving model
-	GloVe_model.save('models/glove_model.bin')
+    # result = model.glove_model.most_similar(positive=['dog', 'cow'], negative=['puppy'], topn=1)
+    # print(result)
 
-	#checking for get_word 
-	try:
-		print(GloVe_model.get_word('abacadavrab'))
-	except KeyError:
-		print('Word Not Found!!!')
 
 if __name__ == "__main__":
-	main()
-	
+    main()

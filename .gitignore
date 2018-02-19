@@ -102,3 +102,5 @@ ENV/
 
 .idea
 .DS_Store
+code/resources/glove*.txt
+code/models/glove_model.bin*

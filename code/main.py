@@ -24,6 +24,11 @@ if __name__ == '__main__':
 
     emails = dal.get_emails(NUM_EMAILS)
     w2v.train(emails)
+
+    email_body = emails[0][2]
+    sentence = w2v.get_sentence(email_body)
+    print len(sentence), email_body
+
     model.train(emails, w2v)
 
     print 'End of script!'

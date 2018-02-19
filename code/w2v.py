@@ -26,3 +26,8 @@ class W2V:
     def get_word(self, word):
         """Given a word (str), return the vector representation for the same"""
         pass
+
+    @abstractmethod
+    def get_sentence(self, sentence):
+        """Given an email body or a sentence (str), return a list of vector representation for each word in it"""
+        pass
