@@ -1,6 +1,7 @@
 import MySQLdb
 import numpy as np
 import os
+import string
 
 
 def get_emails(num_emails=100, fetch_all=False):
@@ -40,8 +41,8 @@ def load_from_db(num_emails=100, fetch_all=False):
     else:
         file_name = str(num_emails) + '_emails.csv'
         res = __db_query_partial(db_conn, num_emails)
-    data = __clean_data(res)
-    data = data[:,1:] # remove the first column that contains the random id
+    data = __clean_data(np.asarray(res))
+    data = data[:, 1:] # remove the first column that contains the random id
     np.savetxt(file_path+file_name, data, fmt='%s', delimiter=',')
 
 
@@ -73,18 +74,19 @@ def __get_appr_filename(num_emails, file_path):
     return str(rec_rows) + '_emails.csv'
 
 
-def __clean_data(r):
+def __clean_data(data):
     """
-    The function assumes an input as a tuple of tuples, cleans the data and returns a numpy array
+    The function assumes an input as a numpy array, cleans the data and returns a numpy array
     """
-    data = np.asarray(r)
     # replace ',' separator in receivers with '|'
-    data[:,2] = np.core.defchararray.replace(data[:, 2], ',', '|')
-    # replace ',' separator in email body with space
-    data[:, 3] = np.core.defchararray.replace(data[:, 3], ',', ' ')
-    # replace '\n' with ' '
+    data[:, 2] = np.core.defchararray.replace(data[:, 2], ',', '|')
+    # convert the email body to lower case
+    data[:, 3] = np.core.defchararray.lower(data[:, 3])
+    # delete all the punctuation marks from the email body
+    data[:, 3] = np.core.defchararray.translate(data[:,3], None, string.punctuation)
+    # replace '\n' with ' ' in email body
     data[:, 3] = np.core.defchararray.replace(data[:, 3], '\n', ' ')
-    # replace '\t' with ' '
+    # replace '\t' with ' ' in email body
     data[:, 3] = np.core.defchararray.replace(data[:, 3], '\t', ' ')
     return data
 
@@ -115,3 +117,6 @@ def __db_query_partial(db_conn, num_emails):
     cur.execute("SET SESSION group_concat_max_len = 100000;")
     cur.execute(query)
     return cur.fetchall()
+
+
+load_from_db(5000)
