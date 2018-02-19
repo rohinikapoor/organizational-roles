@@ -13,3 +13,6 @@ class W2VCustom(W2V):
 
     def get_word(self, word):
         pass
+
+    def get_sentence(self, sentence):
+        pass
