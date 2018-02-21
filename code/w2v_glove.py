@@ -7,9 +7,9 @@ from gensim.models import Word2Vec
 from w2v import W2V
 
 
-PRETRAINED_DIR = 'resources/glove.6B.50d.txt'
-GENSIM_GLOVE_DIR = 'resources/glove.gensim.6B.50d.txt'
-W2V_GLOVE_MODEL_DIR = 'models/glove_model.bin'
+PRETRAINED_DIR = '../resources/glove.6B.50d.txt'
+GENSIM_GLOVE_DIR = '../resources/glove.gensim.6B.50d.txt'
+W2V_GLOVE_MODEL_DIR = '../models/glove_model.bin'
 VERBOSE = False
 
 
