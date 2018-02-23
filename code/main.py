@@ -15,6 +15,7 @@ import dal
 if __name__ == '__main__':
     # TODO: Consider moving parameters and hyperparameters into another file?
     # Or to be injected via the command line
+    utils.populate_userid_mapping()
     NUM_EMAILS = 1000
 
     model = Model1()

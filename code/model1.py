@@ -12,11 +12,11 @@ class Model1(nn.Module, Model):
     def __init__(self, epochs=10):
         self.epochs = epochs
         super(Model1, self).__init__()
-        # embedding lookup for 150 users each have 100 dimension representation
-        self.embedding_layer = nn.Embedding(150, 100)
+        # embedding lookup for 150 users each have 50 dimension representation
+        self.embedding_layer = nn.Embedding(150, 50)
         # first hidden layer, linear layer with weights 200x500
         # this should be the size of <sender+receiver representation>
-        self.h1_layer = nn.Linear(200, 500)
+        self.h1_layer = nn.Linear(100, 500)
         # ReLU activation used
         self.relu = nn.ReLU()
         # final linear layer that outputs the predicted email representation
@@ -53,18 +53,22 @@ class Model1(nn.Module, Model):
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.6, momentum=0.6)
 
         for i in range(len(emails)):
+            print emails[i]
+            print emails[i, 0]
+            print emails[i, 1]
             sender_id = utils.get_userid(emails[i, 0])
             email_word_reps = w2v.get_sentence(emails[i, 2])
             email_rep = self.get_average_rep(email_word_reps)
-            for recv in emails[i, 1]:
+            recv_list = emails[i, 1].split('|')
+            for recv in recv_list:
                 optimizer.zero_grad()
                 recv_id = utils.get_userid(recv)
                 # if sender or receiver is not an enron email id, we ignore this data point
                 if sender_id is None or recv_id is None:
                     continue
                 # do the forward pass
-                pred_email_rep = self.forward(autograd.Variable(torch.LongTensor(sender_id)),
-                                              autograd.Variable(torch.LongTensor(recv_id)))
+                pred_email_rep = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
+                                              autograd.Variable(torch.LongTensor([recv_id])))
                 # compute the loss
                 loss = loss_criteria(pred_email_rep, autograd.Variable(torch.from_numpy(email_rep)))
                 # propagate the loss backward and compute the gradient

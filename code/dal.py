@@ -117,3 +117,5 @@ def __db_query_partial(db_conn, num_emails):
     cur.execute("SET SESSION group_concat_max_len = 100000;")
     cur.execute(query)
     return cur.fetchall()
+
+
