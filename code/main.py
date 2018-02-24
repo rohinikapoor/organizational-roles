@@ -5,20 +5,23 @@ Multiple flags can be used to enable and disable certain sections of the pipelin
 
 from model1 import Model1
 from model2 import Model2
+from model3 import Model3
 from w2v_custom import W2VCustom
 from w2v_glove import W2VGlove
 
 import utils
 import dal
+import time
 
 
 if __name__ == '__main__':
     # TODO: Consider moving parameters and hyperparameters into another file?
     # Or to be injected via the command line
+    start = time.time()
     utils.populate_userid_mapping()
-    NUM_EMAILS = 1000
+    NUM_EMAILS = 10000
 
-    model = Model1()
+    model = Model3()
     # model = Model2()
     w2v = W2VCustom()
     w2v = W2VGlove()
@@ -28,8 +31,7 @@ if __name__ == '__main__':
 
     email_body = emails[0][2]
     sentence = w2v.get_sentence(email_body)
-    print len(sentence), email_body
 
     model.train(emails, w2v)
 
-    print 'End of script!'
+    print 'End of script! Time taken ' + str(time.time() - start)

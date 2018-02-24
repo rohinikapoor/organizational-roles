@@ -52,29 +52,32 @@ class Model1(nn.Module, Model):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.6, momentum=0.6)
 
-        for i in range(len(emails)):
-            print emails[i]
-            print emails[i, 0]
-            print emails[i, 1]
-            sender_id = utils.get_userid(emails[i, 0])
-            email_word_reps = w2v.get_sentence(emails[i, 2])
-            email_rep = self.get_average_rep(email_word_reps)
-            recv_list = emails[i, 1].split('|')
-            for recv in recv_list:
-                optimizer.zero_grad()
-                recv_id = utils.get_userid(recv)
-                # if sender or receiver is not an enron email id, we ignore this data point
-                if sender_id is None or recv_id is None:
+        for epoch in range(self.epochs):
+            epoch_loss = 0.0
+            for i in range(len(emails)):
+                sender_id = utils.get_userid(emails[i, 0])
+                email_word_reps = w2v.get_sentence(emails[i, 2])
+                if len(email_word_reps) == 0:
                     continue
-                # do the forward pass
-                pred_email_rep = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
-                                              autograd.Variable(torch.LongTensor([recv_id])))
-                # compute the loss
-                loss = loss_criteria(pred_email_rep, autograd.Variable(torch.from_numpy(email_rep)))
-                # propagate the loss backward and compute the gradient
-                loss.backward()
-                # change weights based on gradient value
-                optimizer.step()
+                email_rep = self.get_average_rep(email_word_reps)
+                recv_list = emails[i, 1].split('|')
+                for recv in recv_list:
+                    optimizer.zero_grad()
+                    recv_id = utils.get_userid(recv)
+                    # if sender or receiver is not an enron email id, we ignore this data point
+                    if sender_id is None or recv_id is None:
+                        continue
+                    # do the forward pass
+                    pred_email_rep = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
+                                                  autograd.Variable(torch.LongTensor([recv_id])))
+                    # compute the loss
+                    loss = loss_criteria(pred_email_rep, autograd.Variable(torch.from_numpy(email_rep)))
+                    # propagate the loss backward and compute the gradient
+                    loss.backward()
+                    # change weights based on gradient value
+                    optimizer.step()
+                    epoch_loss += loss.data.numpy()
+            print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
 
     def save(self, filename):
         pass

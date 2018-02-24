@@ -2,6 +2,7 @@ import MySQLdb
 import numpy as np
 import os
 import string
+import time
 
 
 def get_emails(num_emails=100, fetch_all=False):
@@ -86,6 +87,8 @@ def __clean_data(data):
     data[:, 3] = np.core.defchararray.translate(data[:,3], None, string.punctuation)
     # replace '\n' with ' ' in email body
     data[:, 3] = np.core.defchararray.replace(data[:, 3], '\n', ' ')
+    # replace '\r' with ' ' in email body
+    data[:, 3] = np.core.defchararray.replace(data[:, 3], '\r', ' ')
     # replace '\t' with ' ' in email body
     data[:, 3] = np.core.defchararray.replace(data[:, 3], '\t', ' ')
     return data
@@ -117,5 +120,4 @@ def __db_query_partial(db_conn, num_emails):
     cur.execute("SET SESSION group_concat_max_len = 100000;")
     cur.execute(query)
     return cur.fetchall()
-
 

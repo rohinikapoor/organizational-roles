@@ -23,6 +23,5 @@ def populate_userid_mapping():
     mapping = np.loadtxt('../resources/employee_id_mapping.csv', dtype='str', delimiter=',', skiprows=1)
     for m in mapping:
         user_id_lookup[m[0]] = int(m[1])
-    print user_id_lookup
 
 
