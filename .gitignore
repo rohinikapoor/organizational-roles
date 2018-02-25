@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Large data files
+data/20000_emails.csv
+data/50000_emails.csv
+
 # Distribution / packaging
 .Python
 env/
