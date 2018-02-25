@@ -8,6 +8,13 @@ import numpy as np
 
 
 class Model1(nn.Module, Model):
+    """
+    Contains the code for Model1.
+    Architecture - sr_embedding -> linear_layer -> relu_activation -> linear_layer -> predicted_email_emb -> loss
+     - sr_embedding is calculated by concatenation of sender and receiver embeddings
+     - Loss is calculated as L2 loss between predicted_email_embedding and email_representation. The email
+     representation is obtained by averaging embeddings from pre-trained word2vec model
+    """
 
     def __init__(self, epochs=10):
         self.epochs = epochs
@@ -57,6 +64,7 @@ class Model1(nn.Module, Model):
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, 0])
                 email_word_reps = w2v.get_sentence(emails[i, 2])
+                # if no word_rep was found for any of the words in the emails, ignore this case
                 if len(email_word_reps) == 0:
                     continue
                 email_rep = self.get_average_rep(email_word_reps)

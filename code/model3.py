@@ -9,6 +9,14 @@ import numpy as np
 
 
 class Model3(nn.Module, Model):
+    """
+    Contains the code for Model3.
+    Architecture - sr_embedding -> linear_layer -> relu_activation -> linear_layer -> predicted_email_emb -> loss
+     - One sr_embedding is calculated for each email as a concatenation of sender_emb and average of all receiver_
+     emb present in the mail
+     - Loss is calculated as L2 loss between predicted_email_embedding and email_representation. The email
+     representation is obtained by averaging embeddings from pre-trained word2vec model
+    """
 
     def __init__(self, epochs=10):
         self.epochs = epochs
@@ -61,10 +69,10 @@ class Model3(nn.Module, Model):
 
         for epoch in range(self.epochs):
             epoch_loss = 0.0
-            start = time.time()
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, 0])
                 email_word_reps = w2v.get_sentence(emails[i, 2])
+                # if the sender was not found or no representation was found for any words of the emails, ignore
                 if sender_id is None or len(email_word_reps) == 0:
                     continue
                 email_rep = self.get_average_rep(email_word_reps)
@@ -74,6 +82,7 @@ class Model3(nn.Module, Model):
                     recv_id = utils.get_userid(recv)
                     if recv_id is not None:
                         recv_ids.append(recv_id)
+                # if none of the receivers were found, ignore this case
                 if len(recv_ids) == 0:
                     continue
                 optimizer.zero_grad()
@@ -87,7 +96,6 @@ class Model3(nn.Module, Model):
                 optimizer.step()
                 epoch_loss += loss.data.numpy()
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
-            print 'time taken ' + str(time.time() - start)
 
     def save(self, filename):
         pass
