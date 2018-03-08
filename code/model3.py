@@ -75,7 +75,8 @@ class Model3(nn.Module, Model):
                 # if the sender was not found or no representation was found for any words of the emails, ignore
                 if sender_id is None or len(email_word_reps) == 0:
                     continue
-                email_rep = self.get_average_rep(email_word_reps)
+                # gets the average email embedding based on word embeddings of all the words in the mail
+                email_rep = np.mean(email_word_reps, axis=0)
                 recv_list = emails[i, 1].split('|')
                 recv_ids = []
                 for recv in recv_list:

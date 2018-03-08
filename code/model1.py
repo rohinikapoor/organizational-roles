@@ -46,15 +46,6 @@ class Model1(nn.Module, Model):
         email_reps = self.email_layer(h1)
         return email_reps
 
-    def get_average_rep(self, word_reps):
-        """
-        Assumes that word_reps is a numpy 2d array with every row as vector representation of word.
-        Calculates the mean across all rows to get average email representation
-        :param word_reps:
-        :return:
-        """
-        return np.mean(word_reps, axis=0)
-
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.6, momentum=0.6)
@@ -67,7 +58,8 @@ class Model1(nn.Module, Model):
                 # if no word_rep was found for any of the words in the emails, ignore this case
                 if len(email_word_reps) == 0:
                     continue
-                email_rep = self.get_average_rep(email_word_reps)
+                # gets the average email embedding based on word embeddings of all the words in the mail
+                email_rep = np.mean(email_word_reps, axis=0)
                 recv_list = emails[i, 1].split('|')
                 for recv in recv_list:
                     optimizer.zero_grad()
