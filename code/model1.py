@@ -5,6 +5,7 @@ import torch.autograd as autograd
 import torch.optim as optim
 import utils
 import numpy as np
+import time
 
 
 class Model1(nn.Module, Model):
@@ -49,8 +50,11 @@ class Model1(nn.Module, Model):
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.6, momentum=0.6)
+        # optimizer = optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
 
         for epoch in range(self.epochs):
+            print 'running epoch ', epoch
+            start = time.time()
             epoch_loss = 0.0
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, 0])
@@ -77,7 +81,26 @@ class Model1(nn.Module, Model):
                     # change weights based on gradient value
                     optimizer.step()
                     epoch_loss += loss.data.numpy()
+            end = time.time()
+            print 'time taken ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+        email_ids, embs = self.extract_user_embeddings()
+        utils.plot_with_tsne(email_ids, embs)
+
+    def extract_user_embeddings(self):
+        """
+        saves the user embeddings as a dictionary key: emailId, value user embeddings
+        :return:
+        """
+        email_ids = utils.get_user_emails()
+        embeddings = []
+        for e_id in email_ids:
+            uid = utils.get_userid(e_id)
+            emb = self.embedding_layer(autograd.Variable(torch.LongTensor([uid])))
+            emb_np = emb.data.numpy().reshape(-1)
+            embeddings.append(emb_np)
+        return email_ids, np.array(embeddings)
+
 
     def save(self, filename):
         pass

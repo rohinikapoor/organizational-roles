@@ -69,6 +69,7 @@ class Model3(nn.Module, Model):
 
         for epoch in range(self.epochs):
             epoch_loss = 0.0
+            start = time.time()
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, 0])
                 email_word_reps = w2v.get_sentence(emails[i, 2])
@@ -96,7 +97,25 @@ class Model3(nn.Module, Model):
                 # change weights based on gradient value
                 optimizer.step()
                 epoch_loss += loss.data.numpy()
+            end = time.time()
+            print 'time taken for epoch : ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+        email_ids, embs = self.extract_user_embeddings()
+        utils.plot_with_tsne(email_ids, embs)
+
+    def extract_user_embeddings(self):
+        """
+        saves the user embeddings as a dictionary key: emailId, value user embeddings
+        :return:
+        """
+        email_ids = utils.get_user_emails()
+        embeddings = []
+        for e_id in email_ids:
+            uid = utils.get_userid(e_id)
+            emb = self.embedding_layer(autograd.Variable(torch.LongTensor([uid])))
+            emb_np = emb.data.numpy().reshape(-1)
+            embeddings.append(emb_np)
+        return email_ids, np.array(embeddings)
 
     def save(self, filename):
         pass
