@@ -21,7 +21,7 @@ if __name__ == '__main__':
     utils.populate_userid_mapping()
     NUM_EMAILS = 10000
 
-    model = Model1(epochs=5)
+    model = Model1(epochs=20)
     # model = Model2()
     # model = Model3(epochs=10)
     w2v = W2VCustom()
