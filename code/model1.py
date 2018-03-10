@@ -19,6 +19,8 @@ class Model1(nn.Module, Model):
 
     def __init__(self, epochs=10):
         self.epochs = epochs
+        # keeps track of how many times the model has seen each email_id, either as a sender or receiver
+        self.emailid_train_freq = {}
         super(Model1, self).__init__()
         # embedding lookup for 150 users each have 50 dimension representation
         self.embedding_layer = nn.Embedding(150, 50)
@@ -71,6 +73,9 @@ class Model1(nn.Module, Model):
                     # if sender or receiver is not an enron email id, we ignore this data point
                     if sender_id is None or recv_id is None:
                         continue
+                    # if valid sender and receiver pairs have been found update their frequencies
+                    self.emailid_train_freq[emails[i, 0]] = self.emailid_train_freq.get(emails[i, 0], 0) + 1
+                    self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
                     # do the forward pass
                     pred_email_rep = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
                                                   autograd.Variable(torch.LongTensor([recv_id])))
@@ -84,17 +89,23 @@ class Model1(nn.Module, Model):
             end = time.time()
             print 'time taken ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+
+        print 'Number of entries in the dictionary ', len(self.emailid_train_freq)
         email_ids, embs = self.extract_user_embeddings()
         utils.plot_with_tsne(email_ids, embs)
 
-    def extract_user_embeddings(self):
+    def extract_user_embeddings(self, threshold=1):
         """
         saves the user embeddings as a dictionary key: emailId, value user embeddings
+        threshold: only embeddings for email_ids that have been seen more than threshold times during training will
+        be extracted
         :return:
         """
         email_ids = utils.get_user_emails()
         embeddings = []
         for e_id in email_ids:
+            if self.emailid_train_freq.get(e_id, 0) < threshold:
+                continue
             uid = utils.get_userid(e_id)
             emb = self.embedding_layer(autograd.Variable(torch.LongTensor([uid])))
             emb_np = emb.data.numpy().reshape(-1)

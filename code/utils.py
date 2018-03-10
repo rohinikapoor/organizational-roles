@@ -3,8 +3,9 @@ This file will contain helper methods for use across files
 """
 import numpy as np
 from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt, mpld3
 import time
+
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in
 # nn.Embeddings layer
@@ -48,7 +49,11 @@ def plot_with_tsne(email_ids, embeddings):
     tsne_embs = tsne.fit_transform(embeddings)
     end = time.time()
     print('time taken by TSNE ', (end-start))
-    plt.scatter(tsne_embs[:,0], tsne_embs[:,1])
-    plt.show()
+
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:,1], s=30)
+    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=email_ids)
+    mpld3.plugins.connect(fig, tooltip)
+    mpld3.show()
 
 
