@@ -37,7 +37,7 @@ def populate_userid_mapping():
         user_id_lookup[m[0]] = int(m[1])
 
 
-def plot_with_tsne(email_ids, embeddings):
+def plot_with_tsne(email_ids, embeddings, display_plot):
     """
     expects a list of email_ids and numpy ndarray of embeddings. The numpy ndarray should have shape L,D where D is the
     size of embeddings and L is the number of users
@@ -50,10 +50,11 @@ def plot_with_tsne(email_ids, embeddings):
     end = time.time()
     print('time taken by TSNE ', (end-start))
 
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:,1], s=30)
-    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=email_ids)
-    mpld3.plugins.connect(fig, tooltip)
-    mpld3.show()
+    if display_plot:
+        fig, ax = plt.subplots()
+        scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:,1], s=30)
+        tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=email_ids)
+        mpld3.plugins.connect(fig, tooltip)
+        mpld3.show()
 
 

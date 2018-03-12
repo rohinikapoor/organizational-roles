@@ -19,11 +19,11 @@ if __name__ == '__main__':
     # Or to be injected via the command line
     start = time.time()
     utils.populate_userid_mapping()
-    NUM_EMAILS = 100
+    NUM_EMAILS = 20000
 
-    model = Model1(epochs=3)
+    #model = Model1(epochs=10)
     # model = Model2()
-    # model = Model3(epochs=10)
+    model = Model3(epochs=10)
     w2v = W2VCustom()
     w2v = W2VGlove()
 
