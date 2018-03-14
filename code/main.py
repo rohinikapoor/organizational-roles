@@ -24,7 +24,7 @@ if __name__ == '__main__':
     #model = Model1(epochs=10)
     # model = Model2()
     model = Model3(epochs=10)
-    w2v = W2VCustom()
+    # w2v = W2VCustom()
     w2v = W2VGlove()
 
     emails = dal.get_emails(NUM_EMAILS)
