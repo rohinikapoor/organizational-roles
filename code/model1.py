@@ -92,26 +92,7 @@ class Model1(nn.Module, Model):
 
         print 'Number of entries in the dictionary ', len(self.emailid_train_freq)
         email_ids, embs = self.extract_user_embeddings()
-        utils.plot_with_tsne(email_ids, embs, True)
-
-    def extract_user_embeddings(self, threshold=1):
-        """
-        saves the user embeddings as a dictionary key: emailId, value user embeddings
-        threshold: only embeddings for email_ids that have been seen more than threshold times during training will
-        be extracted
-        :return:
-        """
-        email_ids = utils.get_user_emails()
-        embeddings = []
-        for e_id in email_ids:
-            if self.emailid_train_freq.get(e_id, 0) < threshold:
-                continue
-            uid = utils.get_userid(e_id)
-            emb = self.embedding_layer(autograd.Variable(torch.LongTensor([uid])))
-            emb_np = emb.data.numpy().reshape(-1)
-            embeddings.append(emb_np)
-        return email_ids, np.array(embeddings)
-
+        utils.plot_with_tsne(email_ids, embs)
 
     def save(self, filename):
         pass

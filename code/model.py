@@ -1,5 +1,8 @@
 from abc import ABCMeta, abstractmethod
-
+import utils
+import torch
+import numpy as np
+import torch.autograd as autograd
 
 class Model:
     __metaclass__ = ABCMeta
@@ -33,3 +36,19 @@ class Model:
         """Given an identifier(?), get the sender or recipient's vector representation
         TODO: Consider refactoring based on requirements"""
         pass
+
+    def extract_user_embeddings(self, threshold=1):
+        """
+        saves the user embeddings as a dictionary key: emailId, value user embeddings
+        :return:
+        """
+        email_ids = utils.get_user_emails()
+        embeddings = []
+        for e_id in email_ids:
+            if self.emailid_train_freq.get(e_id, 0) < threshold:
+                continue
+            uid = utils.get_userid(e_id)
+            emb = self.embedding_layer(autograd.Variable(torch.LongTensor([uid])))
+            emb_np = emb.data.numpy().reshape(-1)
+            embeddings.append(emb_np)
+        return email_ids, np.array(embeddings)
