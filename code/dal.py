@@ -6,6 +6,9 @@ import string
 import time
 import utils
 
+from nltk.tokenize.stanford import StanfordTokenizer
+
+
 def get_emails(num_emails=100, max_users=150, fetch_all=False):
     """ Returns requested number of emails from a csv file. The function returns a numpy array of dimension (N,3)
     where N is the number of rows, dimension1 is senderId, dimension2 is receiverIds, dimension3 is message body
@@ -47,7 +50,7 @@ def __filter_mails_by_users(emails, max_users):
                 if receiver in filtered_ids:
                     filtered_mails.append((sender, receivers, mail))
                     break
-    
+
     filtered_mails = np.array(filtered_mails)
     return filtered_mails
 
@@ -117,6 +120,28 @@ def __clean_data(data):
     data[:, 3] = np.core.defchararray.replace(data[:, 3], '\t', ' ')
     return data
 
+
+def __clean_data_glove(data):
+    """
+    The function assumes an input as a numpy array, cleans the data and returns a numpy array
+    This is meant to tokenize sentences into words that are in the GloVe vocabulary
+    It does not remove punctuations as it is possible that they may provide additional information
+    """
+    # replace ',' separator in receivers with '|'
+    data[:, 2] = np.core.defchararray.replace(data[:, 2], ',', '|')
+    
+    # convert the email body to lower case
+    data[:, 3] = np.core.defchararray.lower(data[:, 3])
+    
+    # clean mails while retaining structure as required by GloVe
+    st = StanfordTokenizer(path_to_jar='../resources/stanford-corenlp-3.9.1.jar')
+    clean_mail = lambda x: ' '.join(st.tokenize(x))
+    for idx in data.shape[0]:
+        # Cannot be vectorized as ndarrays are not contiguous
+        # TODO: See if we can refactor logic to avoid numpy arrays
+        data[idx, 3] = clean_mail(data[idx, 3])
+
+    return data
 
 def __db_query_all(db_conn):
     """
