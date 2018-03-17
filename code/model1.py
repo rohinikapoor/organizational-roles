@@ -5,6 +5,7 @@ import torch.autograd as autograd
 import torch.optim as optim
 import utils
 import numpy as np
+import time
 
 
 class Model1(nn.Module, Model):
@@ -18,6 +19,8 @@ class Model1(nn.Module, Model):
 
     def __init__(self, epochs=10):
         self.epochs = epochs
+        # keeps track of how many times the model has seen each email_id, either as a sender or receiver
+        self.emailid_train_freq = {}
         super(Model1, self).__init__()
         # embedding lookup for 150 users each have 50 dimension representation
         self.embedding_layer = nn.Embedding(150, 50)
@@ -48,9 +51,12 @@ class Model1(nn.Module, Model):
 
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
-        optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.6, momentum=0.6)
+        optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
+        # optimizer = optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
 
         for epoch in range(self.epochs):
+            print 'running epoch ', epoch
+            start = time.time()
             epoch_loss = 0.0
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, 0])
@@ -67,6 +73,9 @@ class Model1(nn.Module, Model):
                     # if sender or receiver is not an enron email id, we ignore this data point
                     if sender_id is None or recv_id is None:
                         continue
+                    # if valid sender and receiver pairs have been found update their frequencies
+                    self.emailid_train_freq[emails[i, 0]] = self.emailid_train_freq.get(emails[i, 0], 0) + 1
+                    self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
                     # do the forward pass
                     pred_email_rep = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
                                                   autograd.Variable(torch.LongTensor([recv_id])))
@@ -77,7 +86,13 @@ class Model1(nn.Module, Model):
                     # change weights based on gradient value
                     optimizer.step()
                     epoch_loss += loss.data.numpy()
+            end = time.time()
+            print 'time taken ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+
+        print 'Number of entries in the dictionary ', len(self.emailid_train_freq)
+        email_ids, embs = self.extract_user_embeddings()
+        utils.plot_with_tsne(email_ids, embs)
 
     def save(self, filename):
         pass

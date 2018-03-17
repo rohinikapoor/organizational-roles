@@ -19,12 +19,12 @@ if __name__ == '__main__':
     # Or to be injected via the command line
     start = time.time()
     utils.populate_userid_mapping()
-    NUM_EMAILS = 10000
+    NUM_EMAILS = 200
 
-    model = Model1()
+    #model = Model1(epochs=10)
     # model = Model2()
-    # model = Model3()
-    w2v = W2VCustom()
+    model = Model3(epochs=3)
+    # w2v = W2VCustom()
     w2v = W2VGlove()
 
     emails = dal.get_emails(NUM_EMAILS)

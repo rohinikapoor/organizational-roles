@@ -99,8 +99,7 @@ def __db_query_all(db_conn):
     :param db_conn:
     :return: tuples of tuples containing data
     """
-    query = "select message.mid, sender, group_concat(rvalue) as receivers, body from" + \
-            "EnronAHS.message inner join EnronAHS.recipientinfo on message.mid=recipientinfo.mid group by message.mid;"
+    query = "select message.mid, sender, group_concat(rvalue) as receivers, body from EnronAHS.message inner join EnronAHS.recipientinfo on message.mid=recipientinfo.mid group by message.mid;"
     cur = db_conn.cursor()
     cur.execute("SET SESSION group_concat_max_len = 100000;")
     cur.execute(query)
@@ -120,4 +119,3 @@ def __db_query_partial(db_conn, num_emails):
     cur.execute("SET SESSION group_concat_max_len = 100000;")
     cur.execute(query)
     return cur.fetchall()
-
