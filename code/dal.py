@@ -139,7 +139,13 @@ def __clean_data_glove(data):
     for idx in data.shape[0]:
         # Cannot be vectorized as ndarrays are not contiguous
         # TODO: See if we can refactor logic to avoid numpy arrays
-        data[idx, 3] = clean_mail(data[idx, 3])
+        cleaned_mail_thread = clean_mail(data[idx, 3])
+        
+        # Truncate the email after the first mail in the thread
+        end_of_thread = cleaned_mail_thread.find('original message')
+        end_of_thread = len(cleaned_mail_thread) if end_of_thread == -1 else end_of_thread
+        cleaned_mail = cleaned_mail_thread[:end_of_thread]
+        data[idx, 3] = cleaned_mail
 
     return data
 
