@@ -6,6 +6,7 @@ import torch.optim as optim
 import utils
 import numpy as np
 import time
+import constants
 
 
 class Model1(nn.Module, Model):
@@ -59,14 +60,14 @@ class Model1(nn.Module, Model):
             start = time.time()
             epoch_loss = 0.0
             for i in range(len(emails)):
-                sender_id = utils.get_userid(emails[i, 0])
-                email_word_reps = w2v.get_sentence(emails[i, 2])
+                sender_id = utils.get_userid(emails[i, constants.SENDER_EMAIL])
+                email_word_reps = w2v.get_sentence(emails[i, constants.EMAIL_BODY])
                 # if no word_rep was found for any of the words in the emails, ignore this case
                 if len(email_word_reps) == 0:
                     continue
                 # gets the average email embedding based on word embeddings of all the words in the mail
                 email_rep = np.mean(email_word_reps, axis=0)
-                recv_list = emails[i, 1].split('|')
+                recv_list = emails[i, constants.RECEIVER_EMAILS].split('|')
                 for recv in recv_list:
                     optimizer.zero_grad()
                     recv_id = utils.get_userid(recv)
@@ -74,7 +75,8 @@ class Model1(nn.Module, Model):
                     if sender_id is None or recv_id is None:
                         continue
                     # if valid sender and receiver pairs have been found update their frequencies
-                    self.emailid_train_freq[emails[i, 0]] = self.emailid_train_freq.get(emails[i, 0], 0) + 1
+                    self.emailid_train_freq[emails[i, constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
+                        emails[i, constants.SENDER_EMAIL], 0) + 1
                     self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
                     # do the forward pass
                     pred_email_rep = self.forward(autograd.Variable(torch.LongTensor([sender_id])),

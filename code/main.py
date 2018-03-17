@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # Or to be injected via the command line
     start = time.time()
     utils.populate_userid_mapping()
-    NUM_EMAILS = 200
+    NUM_EMAILS = 10000
 
     # model = Model1(epochs=10)
     # model = Model2()
@@ -30,9 +30,13 @@ if __name__ == '__main__':
     emails = dal.get_emails(NUM_EMAILS, max_users=10, fetch_all=False)
     w2v.train(emails)
 
-    email_body = emails[0][2]
-    sentence = w2v.get_sentence(email_body)
+    #email_body = emails[0][2]
+    #sentence = w2v.get_sentence(email_body)
 
+    # start = time.time()
+    # utils.get_nearest_neighbors_emails(emails, w2v, 5)
+    # end = time.time()
+    # print 'time taken = ', (end-start)
     model.train(emails, w2v)
 
     print 'End of script! Time taken ' + str(time.time() - start)

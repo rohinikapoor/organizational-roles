@@ -6,12 +6,13 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt, mpld3
 import time
 import seaborn as sb
+import heapq
+import constants
 
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in
 # nn.Embeddings layer
 user_id_lookup = {}
-
 
 def get_userid(u):
     """
@@ -95,5 +96,70 @@ def plot_emails_with_tsne(email_data, w2v):
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=plot_senders)
     mpld3.plugins.connect(fig, tooltip)
     mpld3.show()
+
+
+def get_nearest_neighbors_emails(data, w2v, nb_size=3):
+    """
+    gets the nb_size nearest neighbors for any random email from data.
+    distance is calculated based on embeddings obtained from w2v
+    :param data:
+    :param w2v:
+    :param nb_size:
+    :return:
+    """
+    h = []
+    anchor_row = np.random.choice(len(data), 1)[0]
+    anchor_word_embs = w2v.get_sentence(data[anchor_row, constants.EMAIL_BODY])
+    if len(anchor_word_embs) == 0:
+        print 'random anchor embedding incorrect, please run the program again'
+        return
+    anchor_emb = np.mean(anchor_word_embs, axis=0)
+    minD = 10000000000
+    for i in range(len(data)):
+        if i == anchor_row: continue
+        word_embs = w2v.get_sentence(data[i, constants.EMAIL_BODY])
+        if len(word_embs) == 0: continue
+        emb = np.mean(word_embs, axis=0)
+        # since heapq is a min heap we insert negative of distance
+        d = -np.sum((emb-anchor_emb)*(emb-anchor_emb))
+        minD = min(-d, minD)
+        # insert if the heap is not full yet or if d is greater than min element
+        if len(h) <= nb_size or d > h[0][0]:
+            heapq.heappush(h, (d, data[i, constants.EMAIL_BODY]))
+        if len(h) > nb_size:
+            heapq.heappop(h)
+    print 'minimum distance found ', minD
+    print 'Anchor Email:'
+    print data[anchor_row, constants.EMAIL_BODY]
+    print '\n'
+    print 'Nearest neighbors in order'
+    for i in range(len(h)):
+        print 'Email ' + str(i+1) + ' with distance ' + str(-h[i][0])
+        print h[i][1]
+        print '\n'
+
+
+def get_similar_users(labels, embeddings, nb_size=3):
+    for i in range(embeddings.shape[0]):
+        anchor_emb = embeddings[i]
+        h = []
+        minD = 10000000000
+        for j in range(embeddings.shape[0]):
+            if i == j: continue
+            emb = embeddings[j]
+            d = -np.sum((anchor_emb-emb)*(anchor_emb-emb))
+            minD = min(-d, minD)
+            # insert if the heap is not full yet or if d is greater than min element
+            if len(h) <= nb_size or d > h[0][0]:
+                heapq.heappush(h, (d, labels[j]))
+            if len(h) > nb_size:
+                heapq.heappop(h)
+        print '\n'
+        print 'anchor person: ', labels[i]
+        print 'minimum distance found', minD
+        print 'nearest neighbors:'
+        for k in range(len(h)):
+            print h[k][1], ' with distance=', (-h[k][0])
+
 
 
