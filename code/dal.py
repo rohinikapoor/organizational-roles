@@ -1,11 +1,15 @@
 import MySQLdb
 import numpy as np
 import os
+import random
 import string
 import time
+import utils
+
+from nltk.tokenize.stanford import StanfordTokenizer
 
 
-def get_emails(num_emails=100, fetch_all=False):
+def get_emails(num_emails=100, max_users=150, fetch_all=False):
     """ Returns requested number of emails from a csv file. The function returns a numpy array of dimension (N,3)
     where N is the number of rows, dimension1 is senderId, dimension2 is receiverIds, dimension3 is message body
     If there are multiple csv files present, it selects the appropriate file that meets the <num_emails> requirement
@@ -14,18 +18,41 @@ def get_emails(num_emails=100, fetch_all=False):
     :param fetch_all: Ignores num_emails & fetches all the emails in the enron dataset. The number of returned rows may
     be very large """
     file_path = '../data/'
+    data = []
     if fetch_all:
         file_name = 'all_emails.csv'
         data = np.loadtxt(file_path + file_name, dtype='str', delimiter=',')
-        return data
     else:
         file_name = __get_appr_filename(num_emails, file_path)
         data = np.loadtxt(file_path + file_name, dtype='str', delimiter=',')
-        if len(data) > num_emails:
-            return data[:num_emails]
-        else:
-            return data
+    
+    data = __filter_mails_by_users(data, max_users)
+    if not fetch_all and len(data) > num_emails:
+        data = data[:num_emails]
+    return data
 
+def __filter_mails_by_users(emails, max_users):
+    email_ids = utils.get_user_emails()
+    max_users = min(max_users, len(email_ids))
+    
+    # To have deterministic behaviour over number of users
+    # While having a knob to tweak which users get picked (and thus, number of emails)
+    random_state = random.getstate()
+    random.seed(42)
+    filtered_ids = set(random.sample(email_ids, max_users))
+    random.setstate(random_state)
+    
+    # We retain only those mails that have both valid senders and atleast one valid receiver
+    filtered_mails = []
+    for sender, receivers, mail in emails:
+        if sender in filtered_ids:
+            for receiver in receivers.split('|'):
+                if receiver in filtered_ids:
+                    filtered_mails.append((sender, receivers, mail))
+                    break
+
+    filtered_mails = np.array(filtered_mails)
+    return filtered_mails
 
 def load_from_db(num_emails=100, fetch_all=False):
     """loads the requested number of emails from the database and dumps the file as csv. For this function to
@@ -93,6 +120,34 @@ def __clean_data(data):
     data[:, 3] = np.core.defchararray.replace(data[:, 3], '\t', ' ')
     return data
 
+
+def __clean_data_glove(data):
+    """
+    The function assumes an input as a numpy array, cleans the data and returns a numpy array
+    This is meant to tokenize sentences into words that are in the GloVe vocabulary
+    It does not remove punctuations as it is possible that they may provide additional information
+    """
+    # replace ',' separator in receivers with '|'
+    data[:, 2] = np.core.defchararray.replace(data[:, 2], ',', '|')
+    
+    # convert the email body to lower case
+    data[:, 3] = np.core.defchararray.lower(data[:, 3])
+    
+    # clean mails while retaining structure as required by GloVe
+    st = StanfordTokenizer(path_to_jar='../resources/stanford-corenlp-3.9.1.jar')
+    clean_mail = lambda x: ' '.join(st.tokenize(x))
+    for idx in data.shape[0]:
+        # Cannot be vectorized as ndarrays are not contiguous
+        # TODO: See if we can refactor logic to avoid numpy arrays
+        cleaned_mail_thread = clean_mail(data[idx, 3])
+        
+        # Truncate the email after the first mail in the thread
+        end_of_thread = cleaned_mail_thread.find('original message')
+        end_of_thread = len(cleaned_mail_thread) if end_of_thread == -1 else end_of_thread
+        cleaned_mail = cleaned_mail_thread[:end_of_thread]
+        data[idx, 3] = cleaned_mail
+
+    return data
 
 def __db_query_all(db_conn):
     """
