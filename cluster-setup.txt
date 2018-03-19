@@ -1,0 +1,17 @@
+$ ssh s18<username>@swarm2.cs.umass.edu
+$ mkdir projects
+$ cd projects
+$ git clone https://github.com/rohinikapoor/organizational-roles
+
+Navigate to your local copy of organizational-roles
+$ scp resources/glove.6B.50d.txt s18<username>@swarm2.cs.umass.edu:/home/s18<username>/projects/organizational-roles/resources/
+$ scp data/all_emails.csv s18<username>@swarm2.cs.umass.edu:/home/s18<username>/projects/organizational-roles/data
+
+$ pip install --user http://download.pytorch.org/whl/cpu/torch-0.3.1-cp27-cp27mu-linux_x86_64.whl
+$ pip install --user torchvision 
+$ pip install --user gensim
+$ pip install --user MySQL-python
+$ pip install --user mpld3
+$ pip install --user seaborn
+$ pip install --user nltk
+
