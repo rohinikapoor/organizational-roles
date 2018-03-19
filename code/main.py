@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
-    emails = dal.get_emails(NUM_EMAILS, max_users=10, fetch_all=False)
+    emails = dal.get_emails(NUM_EMAILS, max_users=30, fetch_all=True)
     w2v.train(emails)
 
     email_body = emails[0][2]
