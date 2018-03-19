@@ -19,6 +19,7 @@ def get_emails(num_emails=100, max_users=150, fetch_all=False):
     be very large """
     file_path = '../data/'
     data = []
+    print 'Loading data'
     if fetch_all:
         file_name = 'all_emails.csv'
         data = np.loadtxt(file_path + file_name, dtype='str', delimiter=',')
@@ -26,9 +27,11 @@ def get_emails(num_emails=100, max_users=150, fetch_all=False):
         file_name = __get_appr_filename(num_emails, file_path)
         data = np.loadtxt(file_path + file_name, dtype='str', delimiter=',')
     
+    print 'Loaded data. Filtering by users'
     data = __filter_mails_by_users(data, max_users)
     if not fetch_all and len(data) > num_emails:
         data = data[:num_emails]
+    print 'Data filtered by users'
     return data
 
 def __filter_mails_by_users(emails, max_users):
