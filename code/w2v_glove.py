@@ -16,6 +16,7 @@ VERBOSE = False
 class W2VGlove(W2V):
     def __init__(self):
         # Check if the word2vec model exists
+        print 'Loading glove model'
         if os.path.exists(W2V_GLOVE_MODEL_DIR):
             self.load(W2V_GLOVE_MODEL_DIR)
         else:
@@ -27,6 +28,7 @@ class W2VGlove(W2V):
             # KeyedVectors superclasses Word2Vec
             self.glove_model = KeyedVectors.load_word2vec_format(GENSIM_GLOVE_DIR, binary=False)
             self.save(W2V_GLOVE_MODEL_DIR)
+        print 'Glove model loaded'
 
     def load(self, filename):
         # to load pretrained vectors for word

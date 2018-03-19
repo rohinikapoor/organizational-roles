@@ -3,6 +3,8 @@ This file will contain helper methods for use across files
 """
 import numpy as np
 from sklearn.manifold import TSNE
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt, mpld3
 import time
 import seaborn as sb
@@ -38,7 +40,7 @@ def populate_userid_mapping():
         user_id_lookup[m[0]] = int(m[1])
 
 
-def plot_with_tsne(labels, embeddings, display_plot=True):
+def plot_with_tsne(labels, embeddings, display_hover=True):
     """
     expects a list of email_ids and numpy ndarray of embeddings. The numpy ndarray should have shape L,D where D is the
     size of embeddings and L is the number of users
@@ -49,15 +51,17 @@ def plot_with_tsne(labels, embeddings, display_plot=True):
     end = time.time()
     print('time taken by TSNE ', (end-start))
 
-    if display_plot:
-        fig, ax = plt.subplots()
-        scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:,1], s=30)
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:,1], s=30)
+    if display_hover:
         tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
         mpld3.plugins.connect(fig, tooltip)
         mpld3.show()
+    else:
+        plt.savefig('../outputs/tsne-users.png')
 
 
-def plot_emails_with_tsne(email_data, w2v):
+def plot_emails_with_tsne(email_data, w2v, display_hover=True):
     """
     below code generates embedding for each email (using w2v model) and plots the embedding using unique sender color
     """
@@ -90,10 +94,13 @@ def plot_emails_with_tsne(email_data, w2v):
     tsne_embs = tsne.fit_transform(embeddings)
     end = time.time()
     print('time taken by TSNE ', (end - start))
+
     fig, ax = plt.subplots()
     scatter = ax.scatter(tsne_embs[:, 0], tsne_embs[:, 1], c=plot_color_list, s=70)
-    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=plot_senders)
-    mpld3.plugins.connect(fig, tooltip)
-    mpld3.show()
-
+    if display_hover:
+        tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=plot_senders)
+        mpld3.plugins.connect(fig, tooltip)
+        mpld3.show()
+    else:
+        plt.savefig('../outputs/tsne-emails.png')
 
