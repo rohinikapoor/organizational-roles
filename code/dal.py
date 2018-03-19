@@ -2,14 +2,16 @@ import MySQLdb
 import numpy as np
 import os
 import random
-import string
-import time
 import utils
+import csv
+import time
+import re
 
-from nltk.tokenize.stanford import StanfordTokenizer
+# from nltk.tokenize.stanford import StanfordTokenizer
+from nltk.tokenize.stanford import CoreNLPTokenizer
 
 
-def get_emails(num_emails=100, max_users=150, fetch_all=False):
+def get_emails(num_emails=100, fetch_all=False):
     """ Returns requested number of emails from a csv file. The function returns a numpy array of dimension (N,3)
     where N is the number of rows, dimension1 is senderId, dimension2 is receiverIds, dimension3 is message body
     If there are multiple csv files present, it selects the appropriate file that meets the <num_emails> requirement
@@ -18,23 +20,33 @@ def get_emails(num_emails=100, max_users=150, fetch_all=False):
     :param fetch_all: Ignores num_emails & fetches all the emails in the enron dataset. The number of returned rows may
     be very large """
     file_path = '../data/'
-    data = []
     print 'Loading data'
     if fetch_all:
         file_name = 'all_emails.csv'
-        data = np.loadtxt(file_path + file_name, dtype='str', delimiter=',')
     else:
         file_name = __get_appr_filename(num_emails, file_path)
-        data = np.loadtxt(file_path + file_name, dtype='str', delimiter=',')
-    
-    print 'Loaded data. Filtering by users'
-    data = __filter_mails_by_users(data, max_users)
+
+    with open(file_path+file_name, 'rb') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+
     if not fetch_all and len(data) > num_emails:
         data = data[:num_emails]
-    print 'Data filtered by users'
-    return data
+    return np.array(data)
+
+
+def get_emails_by_users(num_users=150):
+    print 'Loading data'
+    filepath = '../data/all_emails.csv'
+    with open(filepath, 'rb') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    data = __filter_mails_by_users(data, num_users)
+    return np.array(data)
+
 
 def __filter_mails_by_users(emails, max_users):
+    print 'Filtering mail by users'
     email_ids = utils.get_user_emails()
     max_users = min(max_users, len(email_ids))
     
@@ -54,8 +66,8 @@ def __filter_mails_by_users(emails, max_users):
                     filtered_mails.append((sender, receivers, mail))
                     break
 
-    filtered_mails = np.array(filtered_mails)
     return filtered_mails
+
 
 def load_from_db(num_emails=100, fetch_all=False):
     """loads the requested number of emails from the database and dumps the file as csv. For this function to
@@ -72,9 +84,11 @@ def load_from_db(num_emails=100, fetch_all=False):
     else:
         file_name = str(num_emails) + '_emails.csv'
         res = __db_query_partial(db_conn, num_emails)
-    data = __clean_data(np.asarray(res))
-    data = data[:, 1:] # remove the first column that contains the random id
-    np.savetxt(file_path+file_name, data, fmt='%s', delimiter=',')
+    data = __clean_data_glove(res)
+    with open(file_path+file_name, 'wb') as f:
+        writer = csv.writer(f)
+        writer.writerows(data)
+
 
 
 def __get_appr_filename(num_emails, file_path):
@@ -105,52 +119,54 @@ def __get_appr_filename(num_emails, file_path):
     return str(rec_rows) + '_emails.csv'
 
 
-def __clean_data(data):
-    """
-    The function assumes an input as a numpy array, cleans the data and returns a numpy array
-    """
-    # replace ',' separator in receivers with '|'
-    data[:, 2] = np.core.defchararray.replace(data[:, 2], ',', '|')
-    # convert the email body to lower case
-    data[:, 3] = np.core.defchararray.lower(data[:, 3])
-    # delete all the punctuation marks from the email body
-    data[:, 3] = np.core.defchararray.translate(data[:,3], None, string.punctuation)
-    # replace '\n' with ' ' in email body
-    data[:, 3] = np.core.defchararray.replace(data[:, 3], '\n', ' ')
-    # replace '\r' with ' ' in email body
-    data[:, 3] = np.core.defchararray.replace(data[:, 3], '\r', ' ')
-    # replace '\t' with ' ' in email body
-    data[:, 3] = np.core.defchararray.replace(data[:, 3], '\t', ' ')
-    return data
-
-
 def __clean_data_glove(data):
     """
-    The function assumes an input as a numpy array, cleans the data and returns a numpy array
-    This is meant to tokenize sentences into words that are in the GloVe vocabulary
-    It does not remove punctuations as it is possible that they may provide additional information
+    The function assumes input as a tuple of tuples as returned from db , cleans the data and returns a list of list
+    The following cleaning steps are performed
+    1) multiple receivers are separated by '|'
+    2) all the strings are converted into lowercase
+    3) email body is cleaned using stanfordtokenizer. It tokenizes the scentences into words. Punctuations are separated
+    and considered as individual words. This is compatible with word2vec glove model which makes use of the same
+    tokenizer
     """
-    # replace ',' separator in receivers with '|'
-    data[:, 2] = np.core.defchararray.replace(data[:, 2], ',', '|')
-    
-    # convert the email body to lower case
-    data[:, 3] = np.core.defchararray.lower(data[:, 3])
-    
-    # clean mails while retaining structure as required by GloVe
-    st = StanfordTokenizer(path_to_jar='../resources/stanford-corenlp-3.9.1.jar')
-    clean_mail = lambda x: ' '.join(st.tokenize(x))
-    for idx in data.shape[0]:
-        # Cannot be vectorized as ndarrays are not contiguous
-        # TODO: See if we can refactor logic to avoid numpy arrays
-        cleaned_mail_thread = clean_mail(data[idx, 3])
-        
-        # Truncate the email after the first mail in the thread
-        end_of_thread = cleaned_mail_thread.find('original message')
-        end_of_thread = len(cleaned_mail_thread) if end_of_thread == -1 else end_of_thread
-        cleaned_mail = cleaned_mail_thread[:end_of_thread]
-        data[idx, 3] = cleaned_mail
+    # st = StanfordTokenizer(path_to_jar='../resources/stanford-corenlp-3.9.1.jar')
+    st = CoreNLPTokenizer()
+    clean_mail = lambda x: (' '.join(st.tokenize(x))).encode('ascii', 'ignore')
+    cleaned_data = []
+    for row in data:
+        cleaned_row = list(row)
+        # replace ',' separator in receivers with '|'
+        cleaned_row[2] = cleaned_row[2].replace(',','|')
+        # convert the email body to lower case
+        cleaned_row[3] = cleaned_row[3].lower()
+        # put space after full stops since nltk can't separate those
+        cleaned_row[3] = re.sub(r'\.(?=[^ \W\d])', '. ', cleaned_row[3])
+        # use nltk stanford tokenizer to clean the email body
+        cleaned_mail_thread = clean_mail(cleaned_row[3])
+        cleaned_row[3] = __truncate_email(cleaned_mail_thread)
+        # remove the first random id column and append ot to cleaned_data
+        cleaned_data.append(cleaned_row[1:])
 
-    return data
+    return cleaned_data
+
+
+def __truncate_email(em):
+    """
+    trunctates the email after first occurance of either
+    1) original message
+    2) forwarded by
+    """
+    eot = len(em)
+    # find original message
+    eot1 = em.find('original message')
+    if eot1 >= 0:
+        eot = min(eot, eot1)
+    # find forwarded by
+    # eot2 = em.find('forwarded by')
+    # if eot2 >= 0:
+    #     eot = min(eot, eot2)
+    return em[:eot]
+
 
 def __db_query_all(db_conn):
     """
