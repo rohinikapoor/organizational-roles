@@ -38,6 +38,6 @@ if __name__ == '__main__':
     # utils.get_nearest_neighbors_emails(emails, w2v, 5)
     # end = time.time()
     # print 'time taken = ', (end-start)
-    # model.train(emails, w2v)
+    model.train(emails, w2v)
 
     print 'End of script! Time taken ' + str(time.time() - start)
