@@ -21,14 +21,15 @@ if __name__ == '__main__':
     utils.populate_userid_mapping()
     NUM_EMAILS = 50000
 
-    # model = Model1(epochs=10)
+    model = Model1(epochs=20)
     # model = Model2()
-    model = Model3(epochs=3)
+    # model = Model3(epochs=20)
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
-    #emails = dal.get_emails(NUM_EMAILS, fetch_all=False)
+    # emails = dal.get_emails(fetch_all=True)
     emails = dal.get_emails_by_users()
+    print 'Number of emails returned by dal', len(emails)
     w2v.train(emails)
 
     #email_body = emails[0][2]

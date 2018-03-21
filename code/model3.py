@@ -113,8 +113,8 @@ class Model3(nn.Module, Model):
             print 'time taken for epoch : ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
 
-        print 'Number of entries in the dictionary ', len(self.emailid_train_freq)
         email_ids, embs = self.extract_user_embeddings()
+        utils.get_similar_users(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
 
     def save(self, filename):

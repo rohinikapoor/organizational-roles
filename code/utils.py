@@ -146,6 +146,24 @@ def get_nearest_neighbors_emails(data, w2v, nb_size=3):
         print '\n'
 
 
+def save_user_embeddings(email, embeddings):
+    """
+    the method saves the email embeddings passed to it as a pickle file
+    :param email:
+    :param embeddings:
+    :return: saves as pickle file
+    """
+    pass
+
+
+def load_user_embeddings():
+    """
+    The method loads user embeddings from a pickle file and returns a list of emails and a list of embeddings
+    :return:
+    """
+    pass
+
+
 def get_similar_users(labels, embeddings, nb_size=3):
     for i in range(embeddings.shape[0]):
         anchor_emb = embeddings[i]
