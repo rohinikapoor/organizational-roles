@@ -3,6 +3,7 @@ import numpy as np
 import os
 import random
 import utils
+import codecs
 import csv
 import time
 import re
@@ -23,15 +24,18 @@ def get_emails(num_emails=100, fetch_all=False):
     print 'Loading data'
     if fetch_all:
         file_name = 'all_emails.csv'
+        f = codecs.open(file_path+file_name, 'rU', 'utf-16-le')
     else:
         file_name = __get_appr_filename(num_emails, file_path)
-
-    with open(file_path+file_name, 'rb') as f:
+        f = open(file_path+file_name, 'rb')
+    
+    with f:
         reader = csv.reader(f)
         data = list(reader)
 
     if not fetch_all and len(data) > num_emails:
         data = data[:num_emails]
+    print 'Data loaded'
     return np.array(data)
 
 
@@ -44,10 +48,11 @@ def get_emails_by_users(num_users=150):
     """
     print 'Loading data'
     filepath = '../data/all_emails.csv'
-    with open(filepath, 'rb') as f:
+    with codecs.open(filepath, 'rU', 'utf-16-le') as f:
         reader = csv.reader(f)
         data = list(reader)
     data = __filter_mails_by_users(data, num_users)
+    print 'Data loaded'
     return np.array(data)
 
 

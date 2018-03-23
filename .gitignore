@@ -109,3 +109,4 @@ ENV/
 .DS_Store
 resources/glove*.txt
 models/glove_model.bin*
+resources/all_emails.csv
