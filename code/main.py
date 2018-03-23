@@ -21,9 +21,9 @@ if __name__ == '__main__':
     utils.populate_userid_mapping()
     NUM_EMAILS = 50000
 
-    model = Model1(epochs=20)
+    # model = Model1(epochs=50)
     # model = Model2()
-    # model = Model3(epochs=20)
+    model = Model3(epochs=50)
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
@@ -32,8 +32,8 @@ if __name__ == '__main__':
     print 'Number of emails returned by dal', len(emails)
     w2v.train(emails)
 
-    #email_body = emails[0][2]
-    #sentence = w2v.get_sentence(email_body)
+    # email_body = emails[0][2]
+    # sentence = w2v.get_sentence(email_body)
 
     # start = time.time()
     # utils.get_nearest_neighbors_emails(emails, w2v, 5)

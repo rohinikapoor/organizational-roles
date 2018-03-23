@@ -114,6 +114,7 @@ class Model3(nn.Module, Model):
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
 
         email_ids, embs = self.extract_user_embeddings()
+        utils.save_user_embeddings(email_ids, embs)
         utils.get_similar_users(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
 
