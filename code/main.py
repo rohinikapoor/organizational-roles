@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # Or to be injected via the command line
     start = time.time()
     utils.populate_userid_mapping()
-    NUM_EMAILS = 1000
+    NUM_EMAILS = 10000
 
     # model = Model1(epochs=50)
     # model = Model2()

@@ -23,8 +23,9 @@ def get_emails(num_emails=100, fetch_all=False):
     file_path = '../data/'
     print 'Loading data'
     if fetch_all:
-        file_name = 'all_emails.csv'
-        f = codecs.open(file_path+file_name, 'rU', 'utf-16-le')
+        file_name = 'all_emails_conv.csv'
+        # f = codecs.open(file_path+file_name, 'rU', 'utf-16-le')
+        f = open(file_path+file_name, 'r')
     else:
         file_name = __get_appr_filename(num_emails, file_path)
         f = open(file_path+file_name, 'rb')
@@ -32,6 +33,14 @@ def get_emails(num_emails=100, fetch_all=False):
     with f:
         reader = csv.reader(f)
         data = list(reader)
+        # reader = csv.reader(f)
+        # lines_read = 0
+        # data = []
+        # for line in reader:
+        #     lines_read += 1
+        #     if lines_read % 100 == 0:
+        #         print 'Lines read:', lines_read 
+        #     data.append(line)
 
     if not fetch_all and len(data) > num_emails:
         data = data[:num_emails]
@@ -47,8 +56,8 @@ def get_emails_by_users(num_users=150):
     :return:
     """
     print 'Loading data'
-    filepath = '../data/all_emails.csv'
-    with codecs.open(filepath, 'rU', 'utf-16-le') as f:
+    filepath = '../data/all_emails_conv.csv'
+    with open(filepath, 'r') as f:
         reader = csv.reader(f)
         data = list(reader)
     data = __filter_mails_by_users(data, num_users)
