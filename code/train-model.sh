@@ -13,6 +13,6 @@ set -exu
 MODEL_NUMBER=$1
 
 source ~/mypython/bin/activate
-python main.py $MODEL_NUMBER
+python main.py $RUN_ID $MODEL_NAME $NUM_EPOCHS $NUM_USERS
 
 
