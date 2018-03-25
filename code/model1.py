@@ -52,7 +52,7 @@ class Model1(nn.Module, Model):
 
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
-        optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
+        optimizer = optim.RMSprop(self.parameters(), lr=0.0001, alpha=0.99, momentum=0.0)
         # optimizer = optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
 
         for epoch in range(self.epochs):
@@ -92,8 +92,9 @@ class Model1(nn.Module, Model):
             print 'time taken ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
 
-        print 'Number of entries in the dictionary ', len(self.emailid_train_freq)
         email_ids, embs = self.extract_user_embeddings()
+        utils.save_user_embeddings(email_ids, embs)
+        utils.get_similar_users(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
 
     def save(self, filename):

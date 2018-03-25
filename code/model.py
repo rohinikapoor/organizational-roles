@@ -42,11 +42,14 @@ class Model:
         saves the user embeddings as a dictionary key: emailId, value user embeddings
         :return:
         """
-        email_ids = utils.get_user_emails()
+        all_email_ids = utils.get_user_emails()
+
+        email_ids = []
         embeddings = []
-        for e_id in email_ids:
+        for e_id in all_email_ids:
             if self.emailid_train_freq.get(e_id, 0) < threshold:
                 continue
+            email_ids.append(e_id)
             uid = utils.get_userid(e_id)
             emb = self.embedding_layer(autograd.Variable(torch.LongTensor([uid])))
             emb_np = emb.data.numpy().reshape(-1)

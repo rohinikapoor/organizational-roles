@@ -15,7 +15,7 @@ def get_emails(num_emails=100, fetch_all=False):
     """ Returns requested number of emails from a csv file. The function returns a numpy array of dimension (N,3)
     where N is the number of rows, dimension1 is senderId, dimension2 is receiverIds, dimension3 is message body
     If there are multiple csv files present, it selects the appropriate file that meets the <num_emails> requirement
-    and returns the requested number of rows
+    and returns the requested number of rows. Use this method to get a fixed number of mails.
     :param num_emails: The number of rows to be returned
     :param fetch_all: Ignores num_emails & fetches all the emails in the enron dataset. The number of returned rows may
     be very large """
@@ -36,6 +36,12 @@ def get_emails(num_emails=100, fetch_all=False):
 
 
 def get_emails_by_users(num_users=150):
+    """
+    Randomly selects num_users from the 150 users list and trims all_emails to return the mails only for selected
+    num users. Use this method to get all the data for fixed number of users
+    :param num_users:
+    :return:
+    """
     print 'Loading data'
     filepath = '../data/all_emails.csv'
     with open(filepath, 'rb') as f:

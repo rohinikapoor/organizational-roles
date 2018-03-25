@@ -10,6 +10,11 @@ import time
 import seaborn as sb
 import heapq
 import constants
+import pickle
+from sklearn.model_selection import KFold
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
+import csv
 
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in
@@ -53,7 +58,7 @@ def plot_with_tsne(labels, embeddings, display_hover=True):
     print('time taken by TSNE ', (end-start))
 
     fig, ax = plt.subplots()
-    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:,1], s=30)
+    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:, 1], s=30)
     if display_hover:
         tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
         mpld3.plugins.connect(fig, tooltip)
@@ -146,6 +151,27 @@ def get_nearest_neighbors_emails(data, w2v, nb_size=3):
         print '\n'
 
 
+def save_user_embeddings(email_ids, embeddings):
+    """
+    the method saves the email embeddings passed to it as a pickle file
+    :return: saves as pickle file
+    """
+    filepath = '../resources/embeddings.pkl'
+    embs = (email_ids, embeddings)
+    pickle.dump(embs, open(filepath, "wb"))
+
+
+def load_user_embeddings():
+    """
+    The method loads user embeddings from a pickle file and returns a list of emails and a list of embeddings
+    :return:
+    """
+    filepath = '../resources/embeddings.pkl'
+    email_ids, embeddings = pickle.load(open(filepath, "rb"))
+    return email_ids, embeddings
+
+
+
 def get_similar_users(labels, embeddings, nb_size=3):
     for i in range(embeddings.shape[0]):
         anchor_emb = embeddings[i]
@@ -169,4 +195,86 @@ def get_similar_users(labels, embeddings, nb_size=3):
             print h[k][1], ' with distance=', (-h[k][0])
 
 
+def load_user_designations():
+    """
+    the method reads the csv file containing user info and returns a list of email_ids along with their designation
+    """
+    filepath = '../resources/employee_info.csv'
+    with open(filepath, 'rb') as f:
+        reader = csv.reader(f)
+        designations = {}
+        for row in reader:
+            if row[-1] == 'status' or row[-1] == 'NULL' or row[-1] == 'N/A':
+                continue
+            designations[row[2]] = row[-1]
+    # return designations
+    return desgn_categorization1(designations)
 
+
+def desgn_categorization1(designations):
+    for key,val in designations.iteritems():
+        if val == 'CEO' or val == 'President' or val == 'Vice President':
+            designations[key] = 'CEO/Presidents'
+        elif val == 'Managing Director' or val == 'Director':
+            designations[key] = 'Directors'
+        elif val == 'Manager':
+            designations[key] = 'Manager'
+        elif val == 'Employee':
+            designations[key] = 'Employee'
+        else:
+            designations[key] = 'Others'
+    return designations
+
+
+def desgn_categorization2(designations):
+    for key,val in designations.iteritems():
+        if val == 'CEO' or val == 'President' or val == 'Vice President':
+            designations[key] = 'Upper Management'
+        elif val == 'Managing Director' or val == 'Director' or val == 'Manager':
+            designations[key] = 'Middle Management'
+        elif val == 'Employee':
+            designations[key] = 'Employee'
+        else:
+            designations[key] = 'Others'
+    return designations
+
+
+def extract_emb_desgn():
+    designations = load_user_designations()
+    emailids, embs = load_user_embeddings()
+    # remove email embeddings that don't have a designation
+    X = []
+    y=[]
+    for i in range(len(emailids)):
+        e_id = emailids[i]
+        if e_id in designations:
+            X.append(embs[i])
+            y.append(designations[e_id])
+    return np.array(X), np.array(y)
+
+
+def k_fold_cross_validation():
+    # extract the data
+    X, y = extract_emb_desgn()
+    # split the data into k-folds
+    kf = KFold(n_splits=23, shuffle=True)
+    # run k-fold cross validation
+    cor = 0
+    y_t = np.array([])
+    y_p = np.array([])
+    for train_index, test_index in kf.split(X):
+        X_train = X[train_index]
+        y_train = y[train_index]
+        X_test = X[test_index]
+        y_test = y[test_index]
+        classifier = SVC()
+        classifier.fit(X_train, y_train)
+        y_pred = classifier.predict(X_test)
+        print y_pred
+        cor = cor + np.sum(y_pred == y_test)
+        y_t = np.append(y_t, y_test)
+        y_p = np.append(y_p, y_pred)
+    print (cor * 1.0) / len(y)
+
+    #plot the confusion matrix
+    confusion_matrix(y_t, y_p)
