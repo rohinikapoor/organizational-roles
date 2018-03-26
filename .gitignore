@@ -110,5 +110,4 @@ ENV/
 resources/glove*.txt
 models/glove_model.bin*
 data/all_emails.csv
-data/all_emails_conv.csv
 logs/*

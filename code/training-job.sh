@@ -32,7 +32,7 @@ if ! [[ $NUM_USERS =~ $re_num ]] ; then
    echo "Error! Not a number" >&2; exit 1
 fi
 
-NUM_THREADS=14
+NUM_THREADS=1
 
 export MKL_NUM_THREADS=$NUM_THREADS
 export OPENBLAS_NUM_THREADS=$NUM_THREADS
