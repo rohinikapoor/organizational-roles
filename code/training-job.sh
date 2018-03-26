@@ -46,6 +46,9 @@ TIME=`(date +%Y-%m-%d-%H-%M-%S)`
                 -e ../logs/usc-isi/${TIME}/train.err \
                 -o ../logs/usc-isi/${TIME}/train.log \
                 --cpus-per-task $NUM_THREADS \
-                train-model.sh $RUN_ID $MODEL_NAME $NUM_EPOCHS $NUM_USERS
+                --mail-type=ALL \
+                --mail-user=mudit.bhargava90@gmail.com,mohit.surana95@gmail.com \
+                train-model.sh $RUN_ID $MODEL_NAME $NUM_EPOCHS $NUM_USERS $TIME
+
 exit
 
