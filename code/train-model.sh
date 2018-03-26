@@ -10,7 +10,10 @@
 
 set -exu
 
-MODEL_NUMBER=$1
+RUN_ID=$1
+MODEL_NAME=$2
+NUM_EPOCHS=$3
+NUM_USERS=$4
 
 source ~/mypython/bin/activate
 python main.py $RUN_ID $MODEL_NAME $NUM_EPOCHS $NUM_USERS

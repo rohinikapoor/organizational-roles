@@ -6,7 +6,7 @@ export PYTHONPATH=`pwd`
 
 # first command-line argument: run-id
 RUN_ID=$1
-echo 'RUN_ID' = $RUN_ID
+echo 'RUN_ID = ' $RUN_ID
 
 # second command-line aergument model-name
 MODEL_NAME=$2
@@ -42,7 +42,7 @@ TIME=`(date +%Y-%m-%d-%H-%M-%S)`
 
     mkdir -p ../logs/usc-isi/${TIME}
 
-    sbatch -J TRAIN-MODEL-$MODEL_NUMBER-$MODEL_DESC \
+    sbatch -J TRAIN-$MODEL_NAME-E$NUM_EPOCHS-U$NUM_USERS \
                 -e ../logs/usc-isi/${TIME}/train.err \
                 -o ../logs/usc-isi/${TIME}/train.log \
                 --cpus-per-task $NUM_THREADS \
