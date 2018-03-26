@@ -11,11 +11,10 @@ import numpy as np
 class Model2(nn.Module, Model):
     """
     Contains the code for Model3.
-    Architecture - sr_embedding -> linear_layer -> relu_activation -> linear_layer -> predicted_email_emb -> loss
+    Architecture - sr_embedding + prev_word + next_word -> linear_layer -> relu_activation -> linear_layer -> predicted_middle_word -> loss
      - One sr_embedding is calculated for each email as a concatenation of sender_emb and average of all receiver_
      emb present in the mail
-     - Loss is calculated as L2 loss between predicted_email_embedding and email_representation. The email
-     representation is obtained by averaging embeddings from pre-trained word2vec model
+     - Loss is calculated as L2 loss between predicted_middle_word and actual middle word for the word2vec model
     """
 
     def __init__(self, epochs=10):
@@ -31,15 +30,12 @@ class Model2(nn.Module, Model):
         # final linear layer that outputs the predicted email representation
         self.email_layer = nn.Linear(500, 50)
 
-    def forward(self, s_id, r_ids,pv_emb, nv_emb):
+    def forward(self, s_id, r_ids, pv_emb, nv_emb):
         """
-        Input is an integer sender_id and a list of receiver_ids. These ids are first converted into torch Variables and
-        then are used to lookup embeddings. If there are multiple receivers, an average embeddings is taken of all the
-        receivers. The gradients in the receiver embeddings are distributed accordingly.
-        Does a forward pass and returns the predicted email representation
-        :param s_id:
-        :param r_id
-        :return: email representation
+        Input is an integer sender_id, list of receiver_ids along with vector representations of previous and next word.
+        These ids are first converted into torch Variables and then are used to lookup embeddings.
+        If there are multiple receivers, an average embeddings is taken of all the receivers. 
+        Does a forward pass and returns the prediction for the middle word
         """
         # convert integers to long tensors
         s_id = autograd.Variable(torch.LongTensor([s_id]))
@@ -48,34 +44,18 @@ class Model2(nn.Module, Model):
         r_emb = torch.mean(self.embedding_layer(r_ids), 0, True)
         # extract the sender embedding
         s_emb = self.embedding_layer(s_id)
-        # print s_emb.size()
-        # print r_emb.size()
-        #print size(pv_emb)
+        # previous word embedding
         p_emb = torch.autograd.Variable(torch.from_numpy(pv_emb))
         p_emb = p_emb.unsqueeze(0)
+        # next word embedding
         n_emb = torch.autograd.Variable(torch.from_numpy(nv_emb))
         n_emb = n_emb.unsqueeze(0)
-        # print n_emb.size()
-        # simple concatenation of sender and receiver embedding
-        # sr_emb = torch.cat((s_emb, r_emb), 1)
-        # pn_emb = torch.cat((p_emb,n_emb), 1)
-        # print sr_emb.size()
-        # print pn_emb.size()
-        srpn_emb = torch.cat([s_emb, r_emb,p_emb,n_emb], 1)
-        # srpn_emb = torch.cat((srp_emb, n_emb),1)
-        # print srpn_emb.size()
+        # concatenate sender, receiver, prev word and next word embeddings
+        srpn_emb = torch.cat([s_emb, r_emb, p_emb, n_emb], 1)
         h1 = self.relu(self.h1_layer(srpn_emb))
         word_reps = self.email_layer(h1)
+        # the predicted word rep
         return word_reps
-
-    def get_average_rep(self, word_reps):
-        """
-        Assumes that word_reps is a numpy 2d array with every row as vector representation of word.
-        Calculates the mean across all rows to get average email representation
-        :param word_reps:
-        :return:
-        """
-        return np.mean(word_reps, axis=0)
 
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
@@ -83,9 +63,11 @@ class Model2(nn.Module, Model):
 
         for epoch in range(self.epochs):
             epoch_loss = 0.0
+            # loop over each mail
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, 0])
                 email_content = emails[i, 2]
+                # skip if the sender does not have an embedding or there are no words in the email
                 if sender_id is None or email_content is None:
                     continue
                 recv_list = emails[i, 1].split('|')
@@ -97,32 +79,27 @@ class Model2(nn.Module, Model):
                 # if none of the receivers were found, ignore this case
                 if len(recv_ids) == 0:
                     continue
-                # print 'new mail'
-                # print '-------------'
-                # print email_content
-                #print '------------------\n\n'
-                #print i, email_content, sender_id, recv_ids
                 email_words = emails[i, 2].split()
+                # loop through every word in the mail
                 for j in range(1,len(email_words)-1):
-					prev_word = email_words[j-1]
-					next_word = email_words[j+1]
-					email_word_rep = w2v.get_word(email_words[j]) 
-					pv_emb = w2v.get_word(prev_word)
-					nv_emb = w2v.get_word(next_word)
-					if pv_emb is None or nv_emb is None or email_word_rep is None:
-						continue
-					#print pv_emb, " ", nv_emb
-					optimizer.zero_grad()
-					# do the forward pass
-					#print email_words[j], prev_word, next_word
-					pred_word_rep = self.forward(sender_id, recv_ids,pv_emb,nv_emb)
-					# compute the loss
-					loss = loss_criteria(pred_word_rep, autograd.Variable(torch.from_numpy(email_word_rep)))
-					# propagate the loss backward and compute the gradient
-					loss.backward()
-					# change weights based on gradient value
-					optimizer.step()
-					epoch_loss += loss.data.numpy()
+                    prev_word = email_words[j-1]
+                    next_word = email_words[j+1]
+                    email_word_rep = w2v.get_word(email_words[j]) 
+                    pv_emb = w2v.get_word(prev_word)
+                    nv_emb = w2v.get_word(next_word)
+                    # if the previous or the next word has no embedding, skip this triplet
+                    if pv_emb is None or nv_emb is None or email_word_rep is None:
+                        continue
+                    optimizer.zero_grad()
+                    # do the forward pass
+                    pred_word_rep = self.forward(sender_id, recv_ids,pv_emb,nv_emb)
+                    # compute the loss
+                    loss = loss_criteria(pred_word_rep, autograd.Variable(torch.from_numpy(email_word_rep)))
+                    # propagate the loss backward and compute the gradient
+                    loss.backward()
+                    # change weights based on gradient value
+                    optimizer.step()
+                    epoch_loss += loss.data.numpy()
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
 
     def save(self, filename):
