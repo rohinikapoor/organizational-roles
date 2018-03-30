@@ -33,9 +33,6 @@ if __name__ == '__main__':
     NUM_EMAILS = 10000
 
     model = locals()[model_name](epochs=num_epochs)
-    # model = Model1(epochs=10)
-    # model = Model2()
-    model = Model3(epochs=5)
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
