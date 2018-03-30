@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# bin numpy files
+*.bin
+*.bin.vectors.npy
+
 # Large data files
 data/20000_emails.csv
 data/50000_emails.csv
@@ -91,6 +95,9 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+
+# zip files
+*.zip
 
 # Spyder project settings
 .spyderproject

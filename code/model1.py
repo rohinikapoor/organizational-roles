@@ -24,14 +24,14 @@ class Model1(nn.Module, Model):
         self.emailid_train_freq = {}
         super(Model1, self).__init__()
         # embedding lookup for 150 users each have 50 dimension representation
-        self.embedding_layer = nn.Embedding(150, 50)
-        # first hidden layer, linear layer with weights 200x500
+        self.embedding_layer = nn.Embedding(150, constants.USER_EMB_SIZE)
+        # first hidden layer, linear layer with weights 100x500
         # this should be the size of <sender+receiver representation>
-        self.h1_layer = nn.Linear(100, 500)
+        self.h1_layer = nn.Linear(2*constants.USER_EMB_SIZE, 500)
         # ReLU activation used
         self.relu = nn.ReLU()
         # final linear layer that outputs the predicted email representation
-        self.email_layer = nn.Linear(500, 50)
+        self.email_layer = nn.Linear(500, constants.EMAIL_EMB_SIZE)
 
     def forward(self, s_id, r_id):
         """

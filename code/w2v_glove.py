@@ -3,13 +3,15 @@ import os
 from gensim.scripts.glove2word2vec import glove2word2vec
 from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
+import constants
 
 from w2v import W2V
 
+WORD_CORPUS_SIZE = '840B'
 
-PRETRAINED_DIR = '../resources/glove.6B.50d.txt'
-GENSIM_GLOVE_DIR = '../resources/glove.gensim.6B.50d.txt'
-W2V_GLOVE_MODEL_DIR = '../models/glove_model.bin'
+PRETRAINED_DIR = '../resources/glove.{}.{}d.txt'.format(WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
+GENSIM_GLOVE_DIR = '../resources/glove.gensim.{}.{}d.txt'.format(WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
+W2V_GLOVE_MODEL_DIR = '../models/glove_model_{}_{}.bin'.format(WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
 VERBOSE = False
 
 
