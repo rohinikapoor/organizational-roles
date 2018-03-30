@@ -69,19 +69,26 @@ class Model3(nn.Module, Model):
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
+        email_reps = []
+        for i in range(len(emails)):
+            email_word_reps = w2v.get_sentence(emails[i, constants.EMAIL_BODY])
+            if len(email_word_reps) == 0:
+                email_reps.append(None)
+            else:
+                email_rep = np.mean(email_word_reps, axis=0)
+                email_reps.append(email_rep)
 
         for epoch in range(self.epochs):
             epoch_loss = 0.0
             start = time.time()
             for i in range(len(emails)):
                 sender_id = utils.get_userid(emails[i, constants.SENDER_EMAIL])
-                email_word_reps = w2v.get_sentence(emails[i, constants.EMAIL_BODY])
                 # if the sender was not found or no representation was found for any words of the emails, ignore
-                if sender_id is None or len(email_word_reps) == 0:
+                if sender_id is None or type(email_reps[i]) == type(None):
                     continue
 
                 # gets the average email embedding based on word embeddings of all the words in the mail
-                email_rep = np.mean(email_word_reps, axis=0)
+                email_rep = email_reps[i]
                 recv_list = emails[i, constants.RECEIVER_EMAILS].split('|')
                 recv_ids = []
                 for recv in recv_list:
