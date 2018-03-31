@@ -24,15 +24,15 @@ class Model3(nn.Module, Model):
         # keeps track of how many times the model has seen each email_id, either as a sender or receiver
         self.emailid_train_freq = {}
         super(Model3, self).__init__()
-        # embedding lookup for 150 users each have 50 dimension representation
-        self.embedding_layer = nn.Embedding(150, 50)
-        # first hidden layer, linear layer with weights 200x500
+        # embedding lookup for 150 users each have constants.USER_EMB_SIZE dimension representation
+        self.embedding_layer = nn.Embedding(150, constants.USER_EMB_SIZE)
+        # first hidden layer, linear layer with weights 2*constants.USER_EMB_SIZEx500
         # this should be the size of <sender+receiver representation>
-        self.h1_layer = nn.Linear(100, 500)
+        self.h1_layer = nn.Linear(2*constants.USER_EMB_SIZE, 500)
         # ReLU activation used
         self.relu = nn.ReLU()
         # final linear layer that outputs the predicted email representation
-        self.email_layer = nn.Linear(500, 50)
+        self.email_layer = nn.Linear(500, constants.EMAIL_EMB_SIZE)
 
     def forward(self, s_id, r_ids):
         """
@@ -115,7 +115,7 @@ class Model3(nn.Module, Model):
 
         email_ids, embs = self.extract_user_embeddings()
         utils.save_user_embeddings(email_ids, embs)
-        utils.get_similar_users(email_ids, embs)
+        # utils.get_similar_users(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
 
     def save(self, filename):

@@ -92,6 +92,9 @@ celerybeat-schedule
 venv/
 ENV/
 
+# zip files
+*.zip
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -107,7 +110,13 @@ ENV/
 
 .idea
 .DS_Store
+
 resources/glove*.txt
+
 models/glove_model.bin*
+# bin numpy files
+*.bin
+*.bin.vectors.npy
+
 data/all_emails.csv
 logs/*
