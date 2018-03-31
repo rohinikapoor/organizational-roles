@@ -7,11 +7,9 @@ import constants
 
 from w2v import W2V
 
-WORD_CORPUS_SIZE = '840B'
-
-PRETRAINED_DIR = '../resources/glove.{}.{}d.txt'.format(WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
-GENSIM_GLOVE_DIR = '../resources/glove.gensim.{}.{}d.txt'.format(WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
-W2V_GLOVE_MODEL_DIR = '../models/glove_model_{}_{}.bin'.format(WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
+PRETRAINED_DIR = '../resources/glove.{}.{}d.txt'.format(constants.WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
+GENSIM_GLOVE_DIR = '../resources/glove.gensim.{}.{}d.txt'.format(constants.WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
+W2V_GLOVE_MODEL_DIR = '../models/glove_model_{}_{}.bin'.format(constants.WORD_CORPUS_SIZE, constants.EMAIL_EMB_SIZE)
 VERBOSE = False
 
 
