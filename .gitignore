@@ -6,10 +6,6 @@ __pycache__/
 # C extensions
 *.so
 
-# bin numpy files
-*.bin
-*.bin.vectors.npy
-
 # Large data files
 data/20000_emails.csv
 data/50000_emails.csv
@@ -114,7 +110,13 @@ ENV/
 
 .idea
 .DS_Store
+
 resources/glove*.txt
+
 models/glove_model.bin*
+# bin numpy files
+*.bin
+*.bin.vectors.npy
+
 data/all_emails.csv
 logs/*

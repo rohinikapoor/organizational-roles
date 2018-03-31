@@ -23,9 +23,9 @@ class Model1(nn.Module, Model):
         # keeps track of how many times the model has seen each email_id, either as a sender or receiver
         self.emailid_train_freq = {}
         super(Model1, self).__init__()
-        # embedding lookup for 150 users each have 50 dimension representation
+        # embedding lookup for 150 users each have constants.USER_EMB_SIZE dimension representation
         self.embedding_layer = nn.Embedding(150, constants.USER_EMB_SIZE)
-        # first hidden layer, linear layer with weights 100x500
+        # first hidden layer, linear layer with weights 2*constants.USER_EMB_SIZEx500
         # this should be the size of <sender+receiver representation>
         self.h1_layer = nn.Linear(2*constants.USER_EMB_SIZE, 500)
         # ReLU activation used

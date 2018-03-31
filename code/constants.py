@@ -9,6 +9,7 @@ EMAIL_BODY = 2
 
 # defining the dimensions for email, sender and receiver embedding
 EMAIL_EMB_SIZE = 300
+WORD_CORPUS_SIZE = '840B'
 USER_EMB_SIZE = 100
 
 # Commandline arguments
