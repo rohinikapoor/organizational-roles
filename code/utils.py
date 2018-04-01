@@ -156,7 +156,6 @@ def save_user_embeddings(email_ids, embeddings):
     the method saves the email embeddings passed to it as a pickle file
     :return: saves as pickle file
     """
-    print embeddings.shape
     filepath = '../resources/' + 'embeddings_' + constants.RUN_ID + '.pkl'
     embs = (email_ids, embeddings)
     pickle.dump(embs, open(filepath, "wb"))
