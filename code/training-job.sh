@@ -4,12 +4,24 @@ set -exu
 
 export PYTHONPATH=`pwd`
 
+# reads from the config file
+CONFIG_FILE=$1
+while IFS='' read -r line || [[ -n "$line" ]]; do
+    IFS=':'
+    read -ra key_val <<< "$line"
+    configs=$configs"${key_val[1]}"$' '
+done < $CONFIG_FILE
+
+# reads the space separated values
+IFS=' '
+read -ra vals <<< "$configs"
+
 # first command-line argument: run-id
-RUN_ID=$1
+RUN_ID="${vals[0]}"
 echo 'RUN_ID = ' $RUN_ID
 
 # second command-line aergument model-name
-MODEL_NAME=$2
+MODEL_NAME="${vals[1]}"
 echo 'Running Model = ' $MODEL_NAME
 if [ $MODEL_NAME != "Model1" -a $MODEL_NAME != "Model2" -a $MODEL_NAME != "Model3" ]
 	then echo 'Error! Invalid Model'
@@ -17,7 +29,7 @@ if [ $MODEL_NAME != "Model1" -a $MODEL_NAME != "Model2" -a $MODEL_NAME != "Model
 fi
 
 # third argument is number of arguments
-NUM_EPOCHS=$3
+NUM_EPOCHS="${vals[2]}"
 echo 'Number of Epochs' = $NUM_EPOCHS
 re_num='^[0-9]+$'
 if ! [[ $NUM_EPOCHS =~ $re_num ]] ; then
@@ -25,7 +37,7 @@ if ! [[ $NUM_EPOCHS =~ $re_num ]] ; then
 fi
 
 # fourth argument is number of users to run
-NUM_USERS=$4
+NUM_USERS="${vals[3]}"
 echo 'Number of Users = ' $NUM_USERS
 re_num='^[0-9]+$'
 if ! [[ $NUM_USERS =~ $re_num ]] ; then
