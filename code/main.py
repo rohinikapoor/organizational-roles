@@ -3,17 +3,18 @@ This script orchestrates the entire model's lifecycle via a single pipeline
 Multiple flags can be used to enable and disable certain sections of the pipeline
 """
 
+import sys
+import time
+
+import dal
+import utils
+
 from model1 import Model1
 from model2 import Model2
 from model3 import Model3
 from w2v_custom import W2VCustom
 from w2v_glove import W2VGlove
 import constants
-
-import utils
-import dal
-import time
-import sys
 
 
 if __name__ == '__main__':

@@ -1,12 +1,14 @@
-import time
-from model import Model
-import torch
-import torch.nn as nn
-import torch.autograd as autograd
-import torch.optim as optim
-import utils
 import numpy as np
+import time
+import torch
+import torch.autograd as autograd
+import torch.nn as nn
+import torch.optim as optim
+
 import constants
+import utils
+
+from model import Model
 
 
 class Model3(nn.Module, Model):
@@ -69,14 +71,7 @@ class Model3(nn.Module, Model):
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
-        email_reps = []
-        for i in range(len(emails)):
-            email_word_reps = w2v.get_sentence(emails[i, constants.EMAIL_BODY])
-            if len(email_word_reps) == 0:
-                email_reps.append(None)
-            else:
-                email_rep = np.mean(email_word_reps, axis=0)
-                email_reps.append(email_rep)
+        email_reps = w2v.get_email_reps(emails, average=True)
 
         for epoch in range(self.epochs):
             epoch_loss = 0.0

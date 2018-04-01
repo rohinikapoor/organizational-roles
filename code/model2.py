@@ -1,11 +1,13 @@
-import time
-from model import Model
-import torch
-import torch.nn as nn
-import torch.autograd as autograd
-import torch.optim as optim
-import utils
 import numpy as np
+import time
+import torch
+import torch.autograd as autograd
+import torch.nn as nn
+import torch.optim as optim
+
+import utils
+
+from model import Model
 
 
 class Model2(nn.Module, Model):
@@ -79,17 +81,13 @@ class Model2(nn.Module, Model):
                 # if none of the receivers were found, ignore this case
                 if len(recv_ids) == 0:
                     continue
-                email_words = emails[i, 2].split()
+                email_word_reps = w2v.get_sentence(emails[i, 2])
                 # loop through every word in the mail
-                for j in range(1,len(email_words)-1):
-                    prev_word = email_words[j-1]
-                    next_word = email_words[j+1]
-                    email_word_rep = w2v.get_word(email_words[j]) 
-                    pv_emb = w2v.get_word(prev_word)
-                    nv_emb = w2v.get_word(next_word)
-                    # if the previous or the next word has no embedding, skip this triplet
-                    if pv_emb is None or nv_emb is None or email_word_rep is None:
-                        continue
+                for j in range(1,len(email_word_reps)-1):
+                    email_word_rep = email_word_reps[j] 
+                    pv_emb = email_word_reps[j-1]
+                    nv_emb = email_word_reps[j+1]
+                    
                     optimizer.zero_grad()
                     # do the forward pass
                     pred_word_rep = self.forward(sender_id, recv_ids,pv_emb,nv_emb)

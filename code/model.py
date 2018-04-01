@@ -1,8 +1,11 @@
-from abc import ABCMeta, abstractmethod
-import utils
-import torch
 import numpy as np
+import torch
 import torch.autograd as autograd
+
+import utils
+
+from abc import ABCMeta, abstractmethod
+
 
 class Model:
     __metaclass__ = ABCMeta

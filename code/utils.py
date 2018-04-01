@@ -1,20 +1,22 @@
 """
 This file will contain helper methods for use across files
 """
+import csv
+import heapq
 import numpy as np
-from sklearn.manifold import TSNE
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt, mpld3
-import time
-import seaborn as sb
-import heapq
-import constants
 import pickle
+import seaborn as sb
+import time
+
+import constants
+
+from sklearn.manifold import TSNE
+from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.svm import SVC
-from sklearn.metrics import confusion_matrix
-import csv
 
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in

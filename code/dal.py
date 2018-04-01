@@ -1,11 +1,11 @@
+import csv
 import MySQLdb
 import numpy as np
 import os
 import random
-import utils
-import csv
-import time
 import re
+import time
+import utils
 
 # from nltk.tokenize.stanford import StanfordTokenizer
 from nltk.tokenize.stanford import CoreNLPTokenizer
