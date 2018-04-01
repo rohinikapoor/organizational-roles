@@ -1,0 +1,4 @@
+RUN_ID:dun_dun_dun
+MODEL_NAME:Model3
+NUM_EPOCHS:3
+NUM_USERS:150

@@ -6,6 +6,7 @@ export PYTHONPATH=`pwd`
 
 # reads from the config file
 CONFIG_FILE=$1
+configs=$''
 while IFS='' read -r line || [[ -n "$line" ]]; do
     IFS=':'
     read -ra key_val <<< "$line"
