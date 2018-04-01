@@ -8,7 +8,7 @@ RECEIVER_EMAILS = 1
 EMAIL_BODY = 2
 
 # defining the dimensions for email, sender and receiver embedding
-EMAIL_EMB_SIZE = 200
+EMAIL_EMB_SIZE = 50
 WORD_CORPUS_SIZE = '6B'
 USER_EMB_SIZE = 50
 
