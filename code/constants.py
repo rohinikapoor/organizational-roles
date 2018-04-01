@@ -8,9 +8,9 @@ RECEIVER_EMAILS = 1
 EMAIL_BODY = 2
 
 # defining the dimensions for email, sender and receiver embedding
-EMAIL_EMB_SIZE = 300
-WORD_CORPUS_SIZE = '840B'
-USER_EMB_SIZE = 100
+EMAIL_EMB_SIZE = 50
+WORD_CORPUS_SIZE = '6B'
+USER_EMB_SIZE = 50
 
 # Commandline arguments
 RUN_ID = sys.argv[1]
