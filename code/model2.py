@@ -81,14 +81,12 @@ class Model2(nn.Module, Model):
                 # if none of the receivers were found, ignore this case
                 if len(recv_ids) == 0:
                     continue
-                email_words = emails[i, 2].split()
+                email_word_reps = w2v.get_email_reps(emails[i, 2], average=False)
                 # loop through every word in the mail
                 for j in range(1,len(email_words)-1):
-                    prev_word = email_words[j-1]
-                    next_word = email_words[j+1]
-                    email_word_rep = w2v.get_word(email_words[j]) 
-                    pv_emb = w2v.get_word(prev_word)
-                    nv_emb = w2v.get_word(next_word)
+                    email_word_rep = email_word_reps[j] 
+                    pv_emb = email_word_reps[j-1]
+                    nv_emb = email_word_reps[j+1]
                     # if the previous or the next word has no embedding, skip this triplet
                     if pv_emb is None or nv_emb is None or email_word_rep is None:
                         continue
