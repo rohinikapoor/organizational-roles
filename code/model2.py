@@ -1,11 +1,13 @@
-import time
-from model import Model
-import torch
-import torch.nn as nn
-import torch.autograd as autograd
-import torch.optim as optim
-import utils
 import numpy as np
+import time
+import torch
+import torch.autograd as autograd
+import torch.nn as nn
+import torch.optim as optim
+
+import utils
+
+from model import Model
 
 
 class Model2(nn.Module, Model):
