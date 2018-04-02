@@ -66,7 +66,8 @@ def plot_with_tsne(labels, embeddings, display_hover=True):
         mpld3.plugins.connect(fig, tooltip)
         mpld3.show()
     else:
-        plt.savefig('../outputs/tsne-users.png')
+        outfile = '../outputs/' + constants.RUN_ID + '_tsne-users.png'
+        plt.savefig(outfile)
 
 
 def plot_emails_with_tsne(email_data, w2v, display_hover=True):
