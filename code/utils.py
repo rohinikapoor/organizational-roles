@@ -48,6 +48,28 @@ def populate_userid_mapping():
         user_id_lookup[m[0]] = int(m[1])
 
 
+def assign_labels_colors(labels, colors):
+    """
+    Takes a list of labels and colors and assigns a unique label to each color. Returns a color_list of length(labels).
+    The colors will loop around if the number of unique labels are more than the number of unique colors
+    :param labels:
+    :param colors:
+    :return: color_list
+    """
+    col_idx = 0
+    label2col = {}
+    col_list = []
+    for i in range(len(labels)):
+        if labels[i] in label2col:
+            col_list.append(label2col[labels[i]])
+        else:
+            col = colors[col_idx%len(colors)]
+            col_idx += 1
+            label2col[labels[i]] = col
+            col_list.append(col)
+    return col_list
+
+
 def plot_with_tsne(labels, embeddings, display_hover=True):
     """
     expects a list of email_ids and numpy ndarray of embeddings. The numpy ndarray should have shape L,D where D is the
@@ -59,8 +81,12 @@ def plot_with_tsne(labels, embeddings, display_hover=True):
     end = time.time()
     print('time taken by TSNE ', (end-start))
 
+    # creating the colors
+    colors = list(sb.color_palette().as_hex())
+    color_list = assign_labels_colors(labels, colors)
+
     fig, ax = plt.subplots()
-    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:, 1], s=30)
+    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:, 1], c=color_list, s=75)
     if display_hover:
         tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
         mpld3.plugins.connect(fig, tooltip)
@@ -164,12 +190,11 @@ def save_user_embeddings(email_ids, embeddings):
     pickle.dump(embs, open(filepath, "wb"))
 
 
-def load_user_embeddings():
+def load_user_embeddings(filepath):
     """
     The method loads user embeddings from a pickle file and returns a list of emails and a list of embeddings
     :return:
     """
-    filepath = '../resources/embeddings.pkl'
     email_ids, embeddings = pickle.load(open(filepath, "rb"))
     return email_ids, embeddings
 
@@ -242,9 +267,8 @@ def desgn_categorization2(designations):
     return designations
 
 
-def extract_emb_desgn():
+def extract_emb_desgn(emailids, embs):
     designations = load_user_designations()
-    emailids, embs = load_user_embeddings()
     # remove email embeddings that don't have a designation
     X = []
     y=[]
@@ -281,3 +305,8 @@ def k_fold_cross_validation():
 
     #plot the confusion matrix
     confusion_matrix(y_t, y_p)
+
+
+# email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_25ep_m3/embeddings_usr50d_em50d_25ep_m3.pkl')
+# embs, labels = extract_emb_desgn(email_ids, embs)
+# plot_with_tsne(labels.tolist(), embs)
