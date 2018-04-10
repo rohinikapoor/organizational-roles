@@ -85,13 +85,14 @@ class Model2Faster(nn.Module, Model):
 
     def train(self, emails, w2v):
         loss_criteria = nn.MSELoss()
-        optimizer = optim.RMSprop(self.parameters(), lr=0.00001, alpha=0.99, momentum=0.0)
+        optimizer = optim.RMSprop(self.parameters(), lr=1e-3, alpha=0.99, momentum=0.0)
 
         for epoch in range(self.epochs):
             epoch_loss = 0.0
             start = time.time()
             # loop over each mail
             for i in range(len(emails)):
+                optimizer.zero_grad()
                 sender_id = utils.get_userid(emails[i, constants.SENDER_EMAIL])
                 email_content = emails[i, constants.EMAIL_BODY]
                 # skip if the sender does not have an embedding or there are no words in the email
