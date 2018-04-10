@@ -22,6 +22,7 @@ class Model2Faster(nn.Module, Model):
     """
 
     def __init__(self, epochs=10):
+        self.emailid_train_freq = {}
         self.epochs = epochs
         super(Model2Faster, self).__init__()
         # embedding lookup for 150 users each have <constants.USER_EMB_SIZE> dimension representation
@@ -104,9 +105,15 @@ class Model2Faster(nn.Module, Model):
                     recv_id = utils.get_userid(recv)
                     if recv_id is not None:
                         recv_ids.append(recv_id)
+                        self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
                 # if none of the receivers were found, ignore this case
                 if len(recv_ids) == 0:
                     continue
+
+                # if the sender was found and is being used for training update his freq count
+                self.emailid_train_freq[emails[i, constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
+                    emails[i, constants.SENDER_EMAIL], 0) + 1
+
                 # get word representations from glove word2vec
                 email_word_reps = w2v.get_sentence(email_content)
                 # generate a matrix that will contain all combinations of w_j-1,w_j+1 - > w_j
@@ -125,6 +132,10 @@ class Model2Faster(nn.Module, Model):
             end = time.time()
             print 'time taken for epoch:', (end - start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+
+        email_ids, embs = self.extract_user_embeddings()
+        utils.save_user_embeddings(email_ids, embs)
+        utils.plot_with_tsne(email_ids, embs, display_hover=False)
 
     def save(self, filename):
         pass
