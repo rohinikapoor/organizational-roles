@@ -2,6 +2,10 @@ import numpy as np
 
 
 def _separate_pos_neg(y_true, y_pred, is_l2):
+    """
+    This helper function splits the dataset (y_true) into y_true_pos and y_true_neg which are the classifier's ranked
+    outputs to the queries P(valid = 1| sender,receiver,email) and P(valid = 0| sender,receiver,email)
+    """
     if is_l2:
         sort_order = y_pred.argsort()
         y_true_pos = y_true[sort_order]
@@ -63,7 +67,7 @@ def average_precision_at_k(y_true, y_pred=None, k=None, is_l2=False):
     :param y_pred: ndarray having shape (num_examples, ) containing scores or probabilities
     :param k: custom value for k; if this is not set, it considers the entire array
     :param is_l2: flag to indicate whether the y_pred values are scores/errors (True) or probabilities (False)
-    :return: <float> the average precision @ k
+    :return: (<positive_ap_at_k>, <k_pos>, <negative_ap_at_k>, <k_neg>)
     """
     y_true_pos, y_true_neg = _separate_pos_neg(y_true, y_pred, is_l2)
     k_pos, k_neg = _get_effective_k(y_true_pos, y_true_neg, k)
@@ -84,7 +88,7 @@ def mean_average_precision_at_k(y_true, y_pred, k=None, is_l2=False):
                                             containing scores or probabilities
     :param k: custom value for k; if this is not set, it considers the entire array
     :param is_l2: flag to indicate whether the y_pred values are scores/errors (True) or probabilities (False)
-    :return: <float> the mean average precision @ k for all Q users
+    :return: (<positive_map>, <negative_map>) - mean average precision @ k for all Q users
     """
     mean_ap_pos, mean_ap_neg = 0.0, 0.0
     for user_y_true, user_y_pred in zip(y_true, y_pred):
