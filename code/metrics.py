@@ -1,6 +1,30 @@
 import numpy as np
 
 
+def _separate_pos_neg(y_true, y_pred, is_l2):
+    if is_l2:
+        sort_order = y_pred.argsort()
+        y_true_pos = y_true[sort_order]
+        y_true_neg = np.flip(1 - y_true[sort_order], 0)
+    else:
+        sort_order = (-y_pred).argsort()
+        y_pred = y_pred[sort_order]
+        y_true = y_true[sort_order]
+        y_true_pos = y_true[y_pred > 0.5]
+        y_true_neg = np.flip(1 - y_true[y_pred < 0.5], 0)
+    return y_true_pos, y_true_neg
+
+
+def _get_effective_k(y_true_pos, y_true_neg, k):
+    if k is None:
+        k_pos = len(y_true_pos)
+        k_neg = len(y_true_neg)
+    else:
+        k_pos = min(k, len(y_true_pos))
+        k_neg = min(k, len(y_true_neg))
+    return k_pos, k_neg
+
+
 def hits_at_k(y_true, y_pred=None, k=None, is_l2=False):
     """
     Given distances between expected email representation and actual email representation,
@@ -10,23 +34,24 @@ def hits_at_k(y_true, y_pred=None, k=None, is_l2=False):
     :param y_pred: ndarray having shape (num_examples, ) containing scores or probabilities
     :param k: custom value for k; if this is not set, it considers the entire array
     :param is_l2: flag to indicate whether the y_pred values are scores/errors (True) or probabilities (False)
-    :return: <int> the hits @ k metric
+    :return: (<positive_hits_at_k>, <k_pos>, <negative_hits_at_k>, <k_neg>)
     """
-    if k is None:
-        k = len(y_true)
-    else:
-        k = min(k, len(y_true))
+    y_true_pos, y_true_neg = _separate_pos_neg(y_true, y_pred, is_l2)
+    k_pos, k_neg = _get_effective_k(y_true_pos, y_true_neg, k)
 
-    if is_l2:
-        sort_order = y_pred.argsort()
-        y_true = y_true[sort_order]
-        correct = 0
-        for i in xrange(k):
-            correct += y_true[i]
-        return correct, k
-    else:
-        # This does not have clear semantics if we are given the binary probabilities
-        return np.sum(y_true[y_pred > 0.5]), k
+    hits_pos = np.sum(y_true_pos[:k_pos])
+    hits_neg = np.sum(y_true_neg[:k_neg])
+    return hits_pos, k_pos, hits_neg, k_neg
+
+
+def _calc_average_precision(y_true, k):
+    correct = 0
+    ap = 0.0
+    for i in xrange(k):
+        correct += y_true[i]
+        precision = correct / (i + 1.0)
+        ap += precision * y_true[i]
+    return ap / min(k, np.asscalar(np.sum(y_true)))
 
 
 def average_precision_at_k(y_true, y_pred=None, k=None, is_l2=False):
@@ -40,24 +65,12 @@ def average_precision_at_k(y_true, y_pred=None, k=None, is_l2=False):
     :param is_l2: flag to indicate whether the y_pred values are scores/errors (True) or probabilities (False)
     :return: <float> the average precision @ k
     """
-    if k is None:
-        k = len(y_true)
-    else:
-        k = min(k, len(y_true))
+    y_true_pos, y_true_neg = _separate_pos_neg(y_true, y_pred, is_l2)
+    k_pos, k_neg = _get_effective_k(y_true_pos, y_true_neg, k)
 
-    if is_l2:
-        sort_order = y_pred.argsort()
-    else:
-        sort_order = (-y_pred).argsort()
-
-    y_true = y_true[sort_order]
-    correct = 0
-    ap = 0.0
-    for i in xrange(k):
-        correct += y_true[i]
-        precision = correct / (i+1.0)
-        ap += precision * y_true[i]
-    return ap / np.sum(y_true), k
+    ap_pos = _calc_average_precision(y_true_pos, k_pos)
+    ap_neg = _calc_average_precision(y_true_neg, k_neg)
+    return ap_pos, k_pos, ap_neg, k_neg
 
 
 def mean_average_precision_at_k(y_true, y_pred, k=None, is_l2=False):
@@ -73,11 +86,12 @@ def mean_average_precision_at_k(y_true, y_pred, k=None, is_l2=False):
     :param is_l2: flag to indicate whether the y_pred values are scores/errors (True) or probabilities (False)
     :return: <float> the mean average precision @ k for all Q users
     """
-    mean_ap = 0.0
+    mean_ap_pos, mean_ap_neg = 0.0, 0.0
     for user_y_true, user_y_pred in zip(y_true, y_pred):
-        ap, _ = average_precision_at_k(user_y_true, user_y_pred, k, is_l2)
-        mean_ap += ap
-    return mean_ap / len(y_true)
+        ap_pos, _, ap_neg, _ = average_precision_at_k(user_y_true, user_y_pred, k, is_l2)
+        mean_ap_pos += ap_pos
+        mean_ap_neg += ap_neg
+    return mean_ap_pos / len(y_true), mean_ap_neg / len(y_true)
 
 
 if __name__ == '__main__':
