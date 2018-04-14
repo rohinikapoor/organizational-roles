@@ -85,7 +85,6 @@ class Model2Faster(nn.Module, Model):
         return np.array(prev_next_embs), np.array(curr_embs)
 
     def train(self, emails, w2v):
-        loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=1e-3, alpha=0.99, momentum=0.0)
 
         for epoch in range(self.epochs):
@@ -94,41 +93,13 @@ class Model2Faster(nn.Module, Model):
             # loop over each mail
             for i in range(len(emails)):
                 optimizer.zero_grad()
-                sender_id = utils.get_userid(emails[i, constants.SENDER_EMAIL])
-                email_content = emails[i, constants.EMAIL_BODY]
-                # skip if the sender does not have an embedding or there are no words in the email
-                if sender_id is None or email_content is None:
-                    continue
-                recv_list = emails[i, 1].split('|')
-                recv_ids = []
-                for recv in recv_list:
-                    recv_id = utils.get_userid(recv)
-                    if recv_id is not None:
-                        recv_ids.append(recv_id)
-                        self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
-                # if none of the receivers were found, ignore this case
-                if len(recv_ids) == 0:
-                    continue
-
-                # if the sender was found and is being used for training update his freq count
-                self.emailid_train_freq[emails[i, constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
-                    emails[i, constants.SENDER_EMAIL], 0) + 1
-
-                # get word representations from glove word2vec
-                email_word_reps = w2v.get_sentence(email_content)
-                # generate a matrix that will contain all combinations of w_j-1,w_j+1 - > w_j
-                prev_next_embs, curr_embs = self.generate_all_combinations(email_word_reps)
-                if len(curr_embs) == 0:
-                    continue
-                # do the forward pass
-                pred_word_reps = self.forward(sender_id, recv_ids, prev_next_embs)
-                # compute the loss
-                loss = loss_criteria(pred_word_reps, autograd.Variable(torch.from_numpy(curr_embs)))
-                # propagate the loss backward and compute the gradient
-                loss.backward()
-                # change weights based on gradient value
-                optimizer.step()
-                epoch_loss += loss.data.numpy()
+                loss, valid = self.predict(emails[i, :], w2v)
+                if valid:
+                    # propagate the loss backward and compute the gradient
+                    loss.backward()
+                    # change weights based on gradient value
+                    optimizer.step()
+                    epoch_loss += loss.data.numpy()
             end = time.time()
             print 'time taken for epoch:', (end - start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
@@ -136,6 +107,41 @@ class Model2Faster(nn.Module, Model):
         email_ids, embs = self.extract_user_embeddings()
         utils.save_user_embeddings(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
+
+    def predict(self, email, w2v):
+        loss_criteria = nn.MSELoss()
+        sender_id = utils.get_userid(email[constants.SENDER_EMAIL])
+        email_content = email[constants.EMAIL_BODY]
+        # skip if the sender does not have an embedding or there are no words in the email
+        if sender_id is None or email_content is None:
+            return 0, False
+
+        recv_list = email[1].split('|')
+        recv_ids = []
+        for recv in recv_list:
+            recv_id = utils.get_userid(recv)
+            if recv_id is not None:
+                recv_ids.append(recv_id)
+                self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
+        # if none of the receivers were found, ignore this case
+        if len(recv_ids) == 0:
+            return 0, False
+
+        # if the sender was found and is being used for training update his freq count
+        self.emailid_train_freq[email[constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
+            email[constants.SENDER_EMAIL], 0) + 1
+
+        # get word representations from glove word2vec
+        email_word_reps = w2v.get_sentence(email_content)
+        # generate a matrix that will contain all combinations of w_j-1,w_j+1 - > w_j
+        prev_next_embs, curr_embs = self.generate_all_combinations(email_word_reps)
+        if len(curr_embs) == 0:
+            return 0, False
+        # do the forward pass
+        pred_word_reps = self.forward(sender_id, recv_ids, prev_next_embs)
+        # compute the loss
+        loss = loss_criteria(pred_word_reps, autograd.Variable(torch.from_numpy(curr_embs)))
+        return loss, True
 
     def save(self, filename):
         pass

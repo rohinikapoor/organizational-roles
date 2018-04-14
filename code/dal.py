@@ -55,6 +55,39 @@ def get_emails_by_users(num_users=150):
     return np.array(data)
 
 
+def get_negative_emails(emails, fraction=1.0):
+    """
+    Get examples of mails not sent by sender and receiver pairs as negative examples for classification
+    :param emails:
+    :param fraction:
+    :return:
+    """
+    # TODO: Discuss the implications of using external mails instead of restricting ourselves to mails to/fro 150 core
+    # TODO: Discuss the implications of using similar recipients and number of recipients
+    print 'Generating negative examples'
+    filepath = '../data/all_emails.csv'
+    with open(filepath, 'r') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+
+    num_examples = min(int(len(emails) * fraction), len(data))
+    random_state = random.getstate()
+    random.seed(42)
+    random.shuffle(data)
+    data = data[:num_examples]
+    i = 0
+    while i < num_examples:
+        rand_idx = random.randrange(0, len(emails))
+        if data[i][0] != emails[rand_idx][0]:
+            data[i][0] = emails[rand_idx][0]
+            data[i][1] = emails[rand_idx][1]
+            i += 1
+    random.setstate(random_state)
+
+    print 'Examples created'
+    return np.array(data)
+
+
 def __filter_mails_by_users(emails, max_users):
     print 'Filtering mail by users'
     email_ids = utils.get_user_emails()
@@ -98,7 +131,6 @@ def load_from_db(num_emails=100, fetch_all=False):
     with open(file_path+file_name, 'wb') as f:
         writer = csv.writer(f)
         writer.writerows(data)
-
 
 
 def __get_appr_filename(num_emails, file_path):
