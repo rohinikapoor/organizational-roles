@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
-    # emails = dal.get_emails(fetch_all=aTrue)
+    # emails = dal.get_emails(fetch_all=True)
     emails = dal.get_emails_by_users(num_users=num_users)
     print 'Number of emails returned by dal', len(emails)
     w2v.train(emails)

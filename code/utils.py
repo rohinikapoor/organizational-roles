@@ -280,9 +280,9 @@ def extract_emb_desgn(emailids, embs):
     return np.array(X), np.array(y)
 
 
-def k_fold_cross_validation():
+def k_fold_cross_validation(email_ids, embs):
     # extract the data
-    X, y = extract_emb_desgn()
+    X, y = extract_emb_desgn(email_ids, embs)
     # split the data into k-folds
     kf = KFold(n_splits=23, shuffle=True)
     # run k-fold cross validation
@@ -297,7 +297,6 @@ def k_fold_cross_validation():
         classifier = SVC()
         classifier.fit(X_train, y_train)
         y_pred = classifier.predict(X_test)
-        print y_pred
         cor = cor + np.sum(y_pred == y_test)
         y_t = np.append(y_t, y_test)
         y_p = np.append(y_p, y_pred)
@@ -306,7 +305,8 @@ def k_fold_cross_validation():
     #plot the confusion matrix
     confusion_matrix(y_t, y_p)
 
-
-# email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_25ep_m3/embeddings_usr50d_em50d_25ep_m3.pkl')
+# email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_m2faster_20ep/embeddings_usr50d_em50d_m2faster_20ep.pkl')
+# k_fold_cross_validation(email_ids, embs)
+# email_ids, embs = load_user_embeddings('../important_embeddings/usr100d_em300d_m2faster_25ep/embeddings_usr100d_em300d_m2faster_25ep.pkl')
 # embs, labels = extract_emb_desgn(email_ids, embs)
 # plot_with_tsne(labels.tolist(), embs)
