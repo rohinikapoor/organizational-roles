@@ -14,3 +14,6 @@ USER_EMB_SIZE = 50
 
 # Commandline arguments
 RUN_ID = sys.argv[1]
+
+# constant paths w.r.t to code directory
+MODEL_DIR = '../models/'

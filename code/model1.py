@@ -20,8 +20,7 @@ class Model1(nn.Module, Model):
      representation is obtained by averaging embeddings from pre-trained word2vec model
     """
 
-    def __init__(self, epochs=10):
-        self.epochs = epochs
+    def __init__(self, pre_trained=False, load_from=None):
         # keeps track of how many times the model has seen each email_id, either as a sender or receiver
         self.emailid_train_freq = {}
         super(Model1, self).__init__()
@@ -34,6 +33,8 @@ class Model1(nn.Module, Model):
         self.relu = nn.ReLU()
         # final linear layer that outputs the predicted email representation
         self.email_layer = nn.Linear(500, constants.EMAIL_EMB_SIZE)
+        if pre_trained:
+            self.load(load_from)
 
     def forward(self, s_id, r_id):
         """
@@ -52,13 +53,13 @@ class Model1(nn.Module, Model):
         email_reps = self.email_layer(h1)
         return email_reps
 
-    def train(self, emails, w2v):
+    def train(self, emails, w2v, epochs=10, save_model=True):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.0001, alpha=0.99, momentum=0.0)
         # optimizer = optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         email_reps = w2v.get_email_reps(emails, average=True)
 
-        for epoch in range(self.epochs):
+        for epoch in range(epochs):
             print 'running epoch ', epoch
             start = time.time()
             epoch_loss = 0.0
@@ -94,16 +95,13 @@ class Model1(nn.Module, Model):
             print 'time taken ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
 
+        if save_model:
+            file_name = constants.RUN_ID + '_model.pth'
+            self.save(file_name)
         email_ids, embs = self.extract_user_embeddings()
         utils.save_user_embeddings(email_ids, embs)
         # utils.get_similar_users(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
-
-    def save(self, filename):
-        pass
-
-    def load(self, filename):
-        pass
 
     def get_repr(self, identifier):
         pass

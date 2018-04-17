@@ -10,7 +10,6 @@ import dal
 import utils
 
 from model1 import Model1
-from model2 import Model2
 from model3 import Model3
 from model2faster import Model2Faster
 from w2v_custom import W2VCustom
@@ -34,7 +33,7 @@ if __name__ == '__main__':
     utils.populate_userid_mapping()
     NUM_EMAILS = 10000
 
-    model = locals()[model_name](epochs=num_epochs)
+    model = locals()[model_name](pre_trained=False, load_from='mmscdjc_model.pth')
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
@@ -51,6 +50,6 @@ if __name__ == '__main__':
     # utils.get_nearest_neighbors_emails(emails, w2v, 5)
     # end = time.time()
     # print 'time taken = ', (end-start)
-    model.train(emails, w2v)
+    model.train(emails, w2v, num_epochs)
 
     print 'End of script! Time taken ' + str(time.time() - start)

@@ -21,9 +21,8 @@ class Model2Faster(nn.Module, Model):
      - Loss is calculated as L2 loss between predicted_middle_word and actual middle word for the word2vec model
     """
 
-    def __init__(self, epochs=10):
+    def __init__(self, pre_trained=False, load_from=None):
         self.emailid_train_freq = {}
-        self.epochs = epochs
         super(Model2Faster, self).__init__()
         # embedding lookup for 150 users each have <constants.USER_EMB_SIZE> dimension representation
         self.embedding_layer = nn.Embedding(150, constants.USER_EMB_SIZE)
@@ -34,6 +33,8 @@ class Model2Faster(nn.Module, Model):
         self.relu = nn.ReLU()
         # final linear layer that outputs the predicted middle word representation
         self.email_layer = nn.Linear(500, constants.EMAIL_EMB_SIZE)
+        if pre_trained:
+            self.load(load_from)
 
     def forward(self, s_id, r_ids, prev_next_embs):
         """
@@ -84,11 +85,11 @@ class Model2Faster(nn.Module, Model):
             prev_next_embs.append(np.concatenate((email_word_reps[i-1], email_word_reps[i+1])))
         return np.array(prev_next_embs), np.array(curr_embs)
 
-    def train(self, emails, w2v):
+    def train(self, emails, w2v, epochs=10, save_model=True):
         loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=1e-3, alpha=0.99, momentum=0.0)
 
-        for epoch in range(self.epochs):
+        for epoch in range(epochs):
             epoch_loss = 0.0
             start = time.time()
             # loop over each mail
@@ -132,16 +133,12 @@ class Model2Faster(nn.Module, Model):
             end = time.time()
             print 'time taken for epoch:', (end - start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
-
+        if save_model:
+            file_name = constants.RUN_ID + '_model.pth'
+            self.save(file_name)
         email_ids, embs = self.extract_user_embeddings()
         utils.save_user_embeddings(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
-
-    def save(self, filename):
-        pass
-
-    def load(self, filename):
-        pass
 
     def get_repr(self, identifier):
         pass

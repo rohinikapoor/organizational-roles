@@ -1,4 +1,10 @@
 import numpy as np
+import utils
+
+
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import KFold, train_test_split
+from sklearn.svm import SVC
 
 
 def _separate_pos_neg(y_true, y_pred, is_l2):
@@ -98,29 +104,70 @@ def mean_average_precision_at_k(y_true, y_pred, k=None, is_l2=False):
     return mean_ap_pos / len(y_true), mean_ap_neg / len(y_true)
 
 
+def k_fold_cross_validation(email_ids, embs):
+    # extract the data
+    X, y = utils.extract_emb_desgn(email_ids, embs)
+    # split the data into k-folds
+    kf = KFold(n_splits=23, shuffle=True)
+    # run k-fold cross validation
+    cor = 0
+    y_t = np.array([])
+    y_p = np.array([])
+    for train_index, test_index in kf.split(X):
+        X_train = X[train_index]
+        y_train = y[train_index]
+        X_test = X[test_index]
+        y_test = y[test_index]
+        classifier = SVC()
+        classifier.fit(X_train, y_train)
+        y_pred = classifier.predict(X_test)
+        cor = cor + np.sum(y_pred == y_test)
+        y_t = np.append(y_t, y_test)
+        y_p = np.append(y_p, y_pred)
+    print (cor * 1.0) / len(y)
+
+    #plot the confusion matrix
+    confusion_matrix(y_t, y_p)
+
+
+def dominance_metric(email_ids, embs):
+    X, y = utils.get_dominance_data(email_ids, embs)
+    print np.unique(y, return_counts=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, shuffle=True)
+    classifier = SVC()
+    classifier.fit(X_train, y_train)
+    y_pred_train = classifier.predict(X_train)
+    y_pred_test = classifier.predict(X_test)
+    print 'train_acc:', np.mean(y_pred_train == y_train)
+    print 'test_acc:', np.mean(y_pred_test == y_test)
+
+
 if __name__ == '__main__':
-    y_true = np.array([1, 0, 1, 0, 1])
-    # expected sort order -> 1 1 0 0 1
-    y_pred_prob = np.array([0.6, 0.4, 0.7, 0.55, 0.0])
-    y_pred_l2 = np.array([10, 30, 20, 40, 50])
-
-    # 3 on 5
-    print hits_at_k(y_true, y_pred_l2, is_l2=True)
-    print hits_at_k(y_true, y_pred_prob, is_l2=False)
-
-    # (1/1 + 2/2 + 3/5) / 3
-    print average_precision_at_k(y_true, y_pred_l2, is_l2=True)
-    print average_precision_at_k(y_true, y_pred_prob, is_l2=False)
-
-    y2_true = np.array([1, 1, 0, 1, 1])
-    # expected sort order -> 1 0 1 1 1
-    y2_pred_prob = np.array([0.7, 0.4, 0.6, 0.55, 0.0])
-    y2_pred_l2 = np.array([10, 30, 20, 40, 50])
-
-    # (1/1 + 2/3 + 3/4 + 4/5) / 4
-    print average_precision_at_k(y2_true, y2_pred_l2, is_l2=True)
-    print average_precision_at_k(y2_true, y2_pred_prob, is_l2=False)
-
-    # (0.866 + 0.804) / 2
-    print mean_average_precision_at_k([y_true, y2_true], [y_pred_l2, y2_pred_l2], is_l2=True)
-    print mean_average_precision_at_k([y_true, y2_true], [y_pred_prob, y2_pred_prob], is_l2=False)
+    email_ids, embs = utils.load_user_embeddings(
+        '../important_embeddings/100usr_300em_20ep_m3/embeddings_100usr_300em_20ep_m3.pkl')
+    dominance_metric(email_ids, embs)
+    # y_true = np.array([1, 0, 1, 0, 1])
+    # # expected sort order -> 1 1 0 0 1
+    # y_pred_prob = np.array([0.6, 0.4, 0.7, 0.55, 0.0])
+    # y_pred_l2 = np.array([10, 30, 20, 40, 50])
+    #
+    # # 3 on 5
+    # print hits_at_k(y_true, y_pred_l2, is_l2=True)
+    # print hits_at_k(y_true, y_pred_prob, is_l2=False)
+    #
+    # # (1/1 + 2/2 + 3/5) / 3
+    # print average_precision_at_k(y_true, y_pred_l2, is_l2=True)
+    # print average_precision_at_k(y_true, y_pred_prob, is_l2=False)
+    #
+    # y2_true = np.array([1, 1, 0, 1, 1])
+    # # expected sort order -> 1 0 1 1 1
+    # y2_pred_prob = np.array([0.7, 0.4, 0.6, 0.55, 0.0])
+    # y2_pred_l2 = np.array([10, 30, 20, 40, 50])
+    #
+    # # (1/1 + 2/3 + 3/4 + 4/5) / 4
+    # print average_precision_at_k(y2_true, y2_pred_l2, is_l2=True)
+    # print average_precision_at_k(y2_true, y2_pred_prob, is_l2=False)
+    #
+    # # (0.866 + 0.804) / 2
+    # print mean_average_precision_at_k([y_true, y2_true], [y_pred_l2, y2_pred_l2], is_l2=True)
+    # print mean_average_precision_at_k([y_true, y2_true], [y_pred_prob, y2_pred_prob], is_l2=False)
