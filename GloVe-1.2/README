@@ -3,5 +3,5 @@ _____________________________________________________
 
 We set hyperparameters in demo.sh, eg, VECTOR_SIZE=100, for mentioning vector dimension, MAX_ITER=2000, for 2000 epochs
 demo.sh file is called from train-model.sh
-text8 consists of all email data concatenated
+text8 consists of all email data concatenated, present in google drive
 
