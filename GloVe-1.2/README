@@ -5,3 +5,5 @@ We set hyperparameters in demo.sh, eg, VECTOR_SIZE=100, for mentioning vector di
 demo.sh file is called from train-model.sh
 text8 consists of all email data concatenated, present in google drive
 
+./training-job.sh 1 100 2000
+for now set vector size and number of epochs in demo.sh 
