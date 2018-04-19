@@ -13,6 +13,8 @@ if [ ! -e text8 ]; then
   unzip text8.zip
   rm text8.zip
 fi
+NUM_DIM=$1
+NUM_EPOCHS=$2
 
 CORPUS=text8
 VOCAB_FILE=vocab.txt
@@ -24,7 +26,7 @@ VERBOSE=2
 MEMORY=4.0
 VOCAB_MIN_COUNT=5
 VECTOR_SIZE=100
-MAX_ITER=100
+MAX_ITER=2000
 WINDOW_SIZE=15
 BINARY=2
 NUM_THREADS=8
