@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # end = time.time()
     # print 'time taken = ', (end-start)
 
-    model.train(train, w2v)
+    model.train(train, w2v, num_epochs)
 
     neg_emails = dal.get_negative_emails(test, fraction=1.0)
     print 'Number of negative emails returned by dal', len(neg_emails)

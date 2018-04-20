@@ -86,7 +86,6 @@ class Model2Faster(nn.Module, Model):
         return np.array(prev_next_embs), np.array(curr_embs)
 
     def train(self, emails, w2v, epochs=10, save_model=True):
-        loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=1e-3, alpha=0.99, momentum=0.0)
 
         for epoch in range(epochs):

@@ -61,48 +61,20 @@ class Model3(nn.Module, Model):
         return email_reps
 
     def train(self, emails, w2v, epochs=10, save_model=True):
-        loss_criteria = nn.MSELoss()
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
-        email_reps = w2v.get_email_reps(emails, average=True)
 
         for epoch in range(epochs):
             epoch_loss = 0.0
             start = time.time()
             for i in range(len(emails)):
-                sender_id = utils.get_userid(emails[i, constants.SENDER_EMAIL])
-                # if the sender was not found or no representation was found for any words of the emails, ignore
-                if sender_id is None or type(email_reps[i]) == type(None):
-                    continue
-
-                # gets the average email embedding based on word embeddings of all the words in the mail
-                email_rep = email_reps[i]
-                recv_list = emails[i, constants.RECEIVER_EMAILS].split('|')
-                recv_ids = []
-                for recv in recv_list:
-                    recv_id = utils.get_userid(recv)
-                    if recv_id is not None:
-                        recv_ids.append(recv_id)
-                        # if the receiver was found update the frequency count
-                        self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
-
-                # if none of the receivers were found, ignore this case
-                if len(recv_ids) == 0:
-                    continue
-
-                # if the sender was found and is being used for training update his freq count
-                self.emailid_train_freq[emails[i, constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
-                    emails[i, constants.SENDER_EMAIL], 0) + 1
-
                 optimizer.zero_grad()
-                # do the forward pass
-                pred_email_rep = self.forward(sender_id, recv_ids)
-                # compute the loss
-                loss = loss_criteria(pred_email_rep, autograd.Variable(torch.from_numpy(email_rep)))
-                # propagate the loss backward and compute the gradient
-                loss.backward()
-                # change weights based on gradient value
-                optimizer.step()
-                epoch_loss += loss.data.numpy()
+                loss, valid = self.predict(emails[i, :], w2v)
+                if valid:
+                    # propagate the loss backward and compute the gradient
+                    loss.backward()
+                    # change weights based on gradient value
+                    optimizer.step()
+                    epoch_loss += loss.data.numpy()
             end = time.time()
             print 'time taken for epoch : ', (end-start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
@@ -114,6 +86,43 @@ class Model3(nn.Module, Model):
         utils.save_user_embeddings(email_ids, embs)
         # utils.get_similar_users(email_ids, embs)
         utils.plot_with_tsne(email_ids, embs, display_hover=False)
+
+    def predict(self, email, w2v):
+        loss_criteria = nn.MSELoss()
+
+        sender_id = utils.get_userid(email[constants.SENDER_EMAIL])
+        email_content = email[constants.EMAIL_BODY]
+        # skip if the sender does not have an embedding or there are no words in the email
+        if sender_id is None or email_content is None:
+            return 0, False
+
+        # gets the average email embedding based on word embeddings of all the words in the mail
+        email_rep = np.array(w2v.get_sentence(email[2]))
+        if email_rep.shape[0]:
+            email_rep = np.mean(email_rep, axis=0).reshape(1, -1)
+        else:
+            return 0, False
+
+        recv_list = email[1].split('|')
+        recv_ids = []
+        for recv in recv_list:
+            recv_id = utils.get_userid(recv)
+            if recv_id is not None:
+                recv_ids.append(recv_id)
+                self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
+        # if none of the receivers were found, ignore this case
+        if len(recv_ids) == 0:
+            return 0, False
+
+        # if the sender was found and is being used for training update his freq count
+        self.emailid_train_freq[email[constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
+            email[constants.SENDER_EMAIL], 0) + 1
+
+        # do the forward pass
+        pred_email_rep = self.forward(sender_id, recv_ids)
+        # compute the loss
+        loss = loss_criteria(pred_email_rep, autograd.Variable(torch.from_numpy(email_rep)))
+        return loss, True
 
     def get_repr(self, identifier):
         pass
