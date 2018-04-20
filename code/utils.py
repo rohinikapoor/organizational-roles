@@ -342,6 +342,17 @@ def get_dominance_relation(dg1, dg2, emb1, emb2, desgn_order):
     return pair_emb, y
 
 
+def group_mails_by_sender(emails):
+    dataset = {}
+    for sender, receivers, email, date in emails:
+        if sender not in dataset:
+            dataset[sender] = list()
+        dataset[sender].append((sender, receivers, email, date))
+    for sender in dataset:
+        dataset[sender] = np.array(dataset[sender])
+    return dataset
+
+
 def split_by_users(email_ids, embs):
     tr, te = get_user_split(email_ids)
     train_set_usr, test_set_usr = set(tr), set(te)

@@ -61,7 +61,7 @@ def _calc_average_precision(y_true, k):
         correct += y_true[i]
         precision = correct / (i + 1.0)
         ap += precision * y_true[i]
-    return ap / min(k, np.asscalar(np.sum(y_true)))
+    return 1 if min(k, np.asscalar(np.sum(y_true))) == 0 else ap / min(k, np.asscalar(np.sum(y_true)))
 
 
 def average_precision_at_k(y_true, y_pred=None, k=None, is_l2=False):
