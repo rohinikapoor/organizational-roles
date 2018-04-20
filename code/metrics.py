@@ -131,10 +131,15 @@ def k_fold_cross_validation(email_ids, embs):
 
 
 def dominance_metric(email_ids, embs):
-    X, y = utils.get_dominance_data(email_ids, embs)
-    print np.unique(y, return_counts=True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, shuffle=True)
-    classifier = SVC()
+    train_users, train_embs, test_users, test_embs = utils.split_by_users(email_ids, embs)
+    # X, y = utils.get_dominance_data(email_ids, embs)
+    # print np.unique(y, return_counts=True)
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, shuffle=True)
+    X_train, y_train = utils.get_dominance_data(train_users, train_embs)
+    X_test, y_test = utils.get_dominance_data(test_users, test_embs)
+    print X_train.shape, y_train.shape
+    print X_test.shape, y_test.shape
+    classifier = SVC(C=0.1)
     classifier.fit(X_train, y_train)
     y_pred_train = classifier.predict(X_train)
     y_pred_test = classifier.predict(X_test)
@@ -143,8 +148,10 @@ def dominance_metric(email_ids, embs):
 
 
 if __name__ == '__main__':
-    email_ids, embs = utils.load_user_embeddings(
-        '../important_embeddings/100usr_300em_20ep_m3/embeddings_100usr_300em_20ep_m3.pkl')
+    # email_ids, embs = utils.load_user_embeddings(
+    #     '../important_embeddings/usr100d_em200d_20ep_m3/embeddings_usr100d_em200d_20ep_m3.pkl')
+    # k_fold_cross_validation(email_ids, embs)
+    email_ids, embs = utils.load_user_embeddings('../resources/embeddings_dundundun.pkl')
     dominance_metric(email_ids, embs)
     # y_true = np.array([1, 0, 1, 0, 1])
     # # expected sort order -> 1 1 0 0 1

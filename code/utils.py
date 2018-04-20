@@ -14,6 +14,7 @@ import time
 import constants
 
 from sklearn.manifold import TSNE
+from sklearn.model_selection import train_test_split
 
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in
@@ -270,8 +271,8 @@ def desgn_categorization2(designations):
     return designations
 
 
-def extract_emb_desgn(emailids, embs):
-    designations = load_user_designations(cat='None')
+def extract_emb_desgn(emailids, embs, cat='None'):
+    designations = load_user_designations(cat)
     # remove email embeddings that don't have a designation
     X = []
     y=[]
@@ -330,9 +331,63 @@ def get_dominance_relation(dg1, dg2, emb1, emb2, desgn_order):
     return pair_emb, y
 
 
+def split_by_users(email_ids, embs):
+    tr, te = get_user_split(email_ids)
+    train_set_usr, test_set_usr = set(tr), set(te)
+    train_users, train_embs, test_users, test_embs = [], [], [], []
+    for i in range(len(email_ids)):
+        if email_ids[i] in train_set_usr:
+            train_users.append(email_ids[i])
+            train_embs.append(embs[i])
+        elif email_ids[i] in test_set_usr:
+            test_users.append(email_ids[i])
+            test_embs.append(embs[i])
+    # print np.array(train_users).shape, np.array(train_embs).shape, np.array(test_users).shape, np.array(test_embs).shape
+    return train_users, train_embs, test_users, test_embs
+
+
+def get_user_split(email_ids):
+    email_ids_set = set(email_ids)
+    designations = load_user_designations(cat='None')
+    desgn_set = set(designations.keys())
+    filt_email_ids = list(email_ids_set.intersection(desgn_set))
+    train_users, test_users = train_test_split(filt_email_ids, test_size=0.20, random_state=42, shuffle=True)
+    # verify_user_split(train_users, test_users)
+    return train_users, test_users
+
+
+def verify_user_split(train_users, test_users):
+    em_freq = get_emailid_freq()
+    train_frq = [em_freq[em] for em in train_users]
+    test_frq = [em_freq[em] for em in test_users]
+    print len(test_frq), len(train_frq)
+    print 'test min:', np.min(test_frq)
+    print 'test max:', np.max(test_frq)
+    print 'test mean:', np.mean(test_frq)
+    print 'test std:', np.std(test_frq)
+    print 'test sum', np.sum(test_frq)
+    print 'train min:', np.min(train_frq)
+    print 'train max:', np.max(train_frq)
+    print 'train mean:', np.mean(train_frq)
+    print 'train std:', np.std(train_frq)
+    print 'train_sum', np.sum(train_frq)
+
+
+def get_emailid_freq():
+    with open('../resources/emailid_mailfreq.pkl', 'rb') as f:
+        em_freq = pickle.load(f)
+    return em_freq
+
+# em_freq = get_emailid_freq()
 # email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_m2faster_20ep/embeddings_usr50d_em50d_m2faster_20ep.pkl')
+# designations = load_user_designations(cat='None')
+# email_set = set(email_ids)
+# desgn_set = set(designations.keys())
+# email_set = email_set.intersection(desgn_set)
+# split_by_users(email_ids, embs)
+# get_user_split(list(email_set), em_freq)
 # x, y = get_dominance_data(email_ids, embs)
 # k_fold_cross_validation(email_ids, embs)
-# email_ids, embs = load_user_embeddings('../important_embeddings/usr100d_em300d_m2faster_25ep/embeddings_usr100d_em300d_m2faster_25ep.pkl')
-# embs, labels = extract_emb_desgn(email_ids, embs)
+# email_ids, embs = load_user_embeddings('../important_embeddings/embeddings_usr50d_em100d_custom_25ep_m3/embeddings_usr50d_em100d_custom_25ep_m3.pkl')
+# embs, labels = extract_emb_desgn(email_ids, embs, cat='cat1')
 # plot_with_tsne(labels.tolist(), embs)
