@@ -2,6 +2,7 @@
 This file will contain helper methods for use across files
 """
 import csv
+from datetime import datetime
 import heapq
 import numpy as np
 import matplotlib as mpl
@@ -138,6 +139,17 @@ def plot_emails_with_tsne(email_data, w2v, display_hover=True):
         mpld3.show()
     else:
         plt.savefig('../outputs/tsne-emails.png')
+
+
+def plot_email_date_distribution(email_data):
+    list_of_datetimes = [datetime.strptime(x[3], '%Y-%m-%d %H:%M:%S') for x in email_data if '1999' < x[3] < '2003']
+    list_of_datetimes.sort()
+    dates = mpl.dates.date2num(list_of_datetimes)
+    plt.xticks(rotation=60)
+    plt.plot()
+    plt.plot_date(dates, np.arange(0.0, len(dates)) / len(dates), '--')
+    plt.savefig('../outputs/email-date-distribution.png', bbox_inches='tight')
+
 
 def get_nearest_neighbors_emails(data, w2v, nb_size=3):
     """
