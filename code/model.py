@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.autograd as autograd
+import constants
 
 import utils
 
@@ -21,24 +22,22 @@ class Model:
         pass
 
     @abstractmethod
-    def save(self, filename):
-        """Save the model and any supporting data structures required to recreate the state
-        This might be very useful for partial training and retraining across runs on the cluster
-        Might need to even save seeds and optimizer state"""
-        pass
-
-    @abstractmethod
-    def load(self, filename):
-        """Load the model and any supporting data structures to recreate the state
-        This might be very useful for partial training and retraining across runs on the cluster
-        Might need to even restore seeds and optimizer state"""
-        pass
-
-    @abstractmethod
     def get_repr(self, identifier):
         """Given an identifier(?), get the sender or recipient's vector representation
         TODO: Consider refactoring based on requirements"""
         pass
+
+    def save(self, filename):
+        """
+        Saves the model weights to file so that they can be later loaded for inference purposes
+        """
+        torch.save(self.state_dict(), constants.MODEL_DIR + filename)
+
+    def load(self, filename):
+        """
+        Loads the model weights from a given file
+        """
+        self.load_state_dict(torch.load(constants.MODEL_DIR + filename))
 
     def extract_user_embeddings(self, threshold=1):
         """

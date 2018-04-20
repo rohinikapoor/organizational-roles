@@ -14,9 +14,7 @@ import time
 import constants
 
 from sklearn.manifold import TSNE
-from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import KFold
-from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
 
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in
@@ -139,6 +137,7 @@ def plot_emails_with_tsne(email_data, w2v, display_hover=True):
     else:
         plt.savefig('../outputs/tsne-emails.png')
 
+
 def get_nearest_neighbors_emails(data, w2v, nb_size=3):
     """
     gets the nb_size nearest neighbors for any random email from data.
@@ -223,7 +222,7 @@ def get_similar_users(labels, embeddings, nb_size=3):
             print h[k][1], ' with distance=', (-h[k][0])
 
 
-def load_user_designations():
+def load_user_designations(cat):
     """
     the method reads the csv file containing user info and returns a list of email_ids along with their designation
     """
@@ -236,7 +235,12 @@ def load_user_designations():
                 continue
             designations[row[2]] = row[-1]
     # return designations
-    return desgn_categorization1(designations)
+    if cat == 'cat1':
+        return desgn_categorization1(designations)
+    elif cat == 'cat2':
+        return desgn_categorization2(designations)
+    else:
+        return designations
 
 
 def desgn_categorization1(designations):
@@ -267,8 +271,8 @@ def desgn_categorization2(designations):
     return designations
 
 
-def extract_emb_desgn(emailids, embs):
-    designations = load_user_designations()
+def extract_emb_desgn(emailids, embs, cat='None'):
+    designations = load_user_designations(cat)
     # remove email embeddings that don't have a designation
     X = []
     y=[]
@@ -280,33 +284,110 @@ def extract_emb_desgn(emailids, embs):
     return np.array(X), np.array(y)
 
 
-def k_fold_cross_validation(email_ids, embs):
-    # extract the data
-    X, y = extract_emb_desgn(email_ids, embs)
-    # split the data into k-folds
-    kf = KFold(n_splits=23, shuffle=True)
-    # run k-fold cross validation
-    cor = 0
-    y_t = np.array([])
-    y_p = np.array([])
-    for train_index, test_index in kf.split(X):
-        X_train = X[train_index]
-        y_train = y[train_index]
-        X_test = X[test_index]
-        y_test = y[test_index]
-        classifier = SVC()
-        classifier.fit(X_train, y_train)
-        y_pred = classifier.predict(X_test)
-        cor = cor + np.sum(y_pred == y_test)
-        y_t = np.append(y_t, y_test)
-        y_p = np.append(y_p, y_pred)
-    print (cor * 1.0) / len(y)
+def get_dominance_data(email_ids, embs):
+    """
+    :param email_ids: Email Ids of Enron people corresponding to their embedding
+    :param embs: Trained embeddings for people
+    :return X: concatenated pair of embeddings emb1,emb2
+    :return y: -1, 0 or 1 where -1 means desgn(emb1)<desgn(emb1), 0 when desgn(emb1)=desgn(emb1) &
+     +1 when desgn(emb1)>desgn(emb1)
+    """
+    desgn_order = {'Employee': 0,
+                   'Trader': 0,
+                   'Manager': 1,
+                   'In House Lawyer': 1,
+                   'Managing Director': 2,
+                   'Director': 3,
+                   'Vice President': 4,
+                   'President': 5,
+                   'CEO': 6}
+    user_desgn = load_user_designations(cat='None')
+    dom_embs = []
+    dom_y = []
+    for i in range(len(email_ids)):
+        for j in range(i+1, len(email_ids)):
+            if email_ids[i] not in user_desgn or email_ids[j] not in user_desgn or i == j:
+                continue
+            user_dg_i = user_desgn[email_ids[i]]
+            user_dg_j = user_desgn[email_ids[j]]
+            p = np.random.rand()
+            if p > 0.5:
+                pair_emb, y = get_dominance_relation(user_dg_i, user_dg_j, embs[i], embs[j], desgn_order)
+            else:
+                pair_emb, y = get_dominance_relation(user_dg_j, user_dg_i, embs[j], embs[i], desgn_order)
+            dom_embs.append(pair_emb)
+            dom_y.append(y)
+    return np.array(dom_embs), np.array(dom_y)
 
-    #plot the confusion matrix
-    confusion_matrix(y_t, y_p)
 
+def get_dominance_relation(dg1, dg2, emb1, emb2, desgn_order):
+    pair_emb = np.concatenate((emb1, emb2))
+    if desgn_order[dg1] < desgn_order[dg2]:
+        y = -1
+    elif desgn_order[dg1] > desgn_order[dg2]:
+        y = 1
+    else:
+        y = 0
+    return pair_emb, y
+
+
+def split_by_users(email_ids, embs):
+    tr, te = get_user_split(email_ids)
+    train_set_usr, test_set_usr = set(tr), set(te)
+    train_users, train_embs, test_users, test_embs = [], [], [], []
+    for i in range(len(email_ids)):
+        if email_ids[i] in train_set_usr:
+            train_users.append(email_ids[i])
+            train_embs.append(embs[i])
+        elif email_ids[i] in test_set_usr:
+            test_users.append(email_ids[i])
+            test_embs.append(embs[i])
+    # print np.array(train_users).shape, np.array(train_embs).shape, np.array(test_users).shape, np.array(test_embs).shape
+    return train_users, train_embs, test_users, test_embs
+
+
+def get_user_split(email_ids):
+    email_ids_set = set(email_ids)
+    designations = load_user_designations(cat='None')
+    desgn_set = set(designations.keys())
+    filt_email_ids = list(email_ids_set.intersection(desgn_set))
+    train_users, test_users = train_test_split(filt_email_ids, test_size=0.20, random_state=42, shuffle=True)
+    # verify_user_split(train_users, test_users)
+    return train_users, test_users
+
+
+def verify_user_split(train_users, test_users):
+    em_freq = get_emailid_freq()
+    train_frq = [em_freq[em] for em in train_users]
+    test_frq = [em_freq[em] for em in test_users]
+    print len(test_frq), len(train_frq)
+    print 'test min:', np.min(test_frq)
+    print 'test max:', np.max(test_frq)
+    print 'test mean:', np.mean(test_frq)
+    print 'test std:', np.std(test_frq)
+    print 'test sum', np.sum(test_frq)
+    print 'train min:', np.min(train_frq)
+    print 'train max:', np.max(train_frq)
+    print 'train mean:', np.mean(train_frq)
+    print 'train std:', np.std(train_frq)
+    print 'train_sum', np.sum(train_frq)
+
+
+def get_emailid_freq():
+    with open('../resources/emailid_mailfreq.pkl', 'rb') as f:
+        em_freq = pickle.load(f)
+    return em_freq
+
+# em_freq = get_emailid_freq()
 # email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_m2faster_20ep/embeddings_usr50d_em50d_m2faster_20ep.pkl')
+# designations = load_user_designations(cat='None')
+# email_set = set(email_ids)
+# desgn_set = set(designations.keys())
+# email_set = email_set.intersection(desgn_set)
+# split_by_users(email_ids, embs)
+# get_user_split(list(email_set), em_freq)
+# x, y = get_dominance_data(email_ids, embs)
 # k_fold_cross_validation(email_ids, embs)
-# email_ids, embs = load_user_embeddings('../important_embeddings/usr100d_em300d_m2faster_25ep/embeddings_usr100d_em300d_m2faster_25ep.pkl')
-# embs, labels = extract_emb_desgn(email_ids, embs)
+# email_ids, embs = load_user_embeddings('../important_embeddings/embeddings_usr50d_em100d_custom_25ep_m3/embeddings_usr50d_em100d_custom_25ep_m3.pkl')
+# embs, labels = extract_emb_desgn(email_ids, embs, cat='cat1')
 # plot_with_tsne(labels.tolist(), embs)
