@@ -61,7 +61,10 @@ if __name__ == '__main__':
     # emails = dal.get_emails(fetch_all=True)
     emails = dal.get_emails_by_users(num_users=num_users)
     print 'Number of emails returned by dal', len(emails)
-    w2v.train(emails)
+
+    train, val, test = dal.dataset_split(emails, val_split=0.0, test_split=0.3)
+
+    # w2v.train(emails)
 
     email_body = emails[0][2]
     sentence = w2v.get_sentence(email_body)
@@ -71,14 +74,15 @@ if __name__ == '__main__':
     # utils.get_nearest_neighbors_emails(emails, w2v, 5)
     # end = time.time()
     # print 'time taken = ', (end-start)
-    # model.train(emails, w2v)
 
-    neg_emails = dal.get_negative_emails(emails, fraction=1.0)
+    model.train(train, w2v)
+
+    neg_emails = dal.get_negative_emails(test, fraction=1.0)
     print 'Number of negative emails returned by dal', len(neg_emails)
 
     if model_name in ('Model1', 'Model2', 'Model2Faster', 'Model3'):
-        y_true, y_pred = get_predictions_l2(model, w2v, emails, neg_emails)
-        print metrics.hits_at_k(y_true, y_pred, k=1000, is_l2=True)
-        print metrics.average_precision_at_k(y_true, y_pred, k=1000, is_l2=True)
+        y_true, y_pred = get_predictions_l2(model, w2v, test, neg_emails)
+        print metrics.hits_at_k(y_true, y_pred, k=200, is_l2=True)
+        print metrics.average_precision_at_k(y_true, y_pred, k=200, is_l2=True)
 
     print 'End of script! Time taken ' + str(time.time() - start)
