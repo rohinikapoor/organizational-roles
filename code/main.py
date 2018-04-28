@@ -13,6 +13,7 @@ import utils
 
 from model1 import Model1
 from model3 import Model3
+from model4 import Model4
 from model2faster import Model2Faster
 from w2v_custom import W2VCustom
 from w2v_glove import W2VGlove
@@ -33,6 +34,24 @@ def get_predictions_l2(model, w2v, emails, neg_emails):
         if valid:
             y_true.append(0)
             y_pred.append(np.asscalar(loss.data.numpy()))
+
+    return np.array(y_true), np.array(y_pred)
+
+
+def get_predictions_prob(model, w2v, emails, neg_emails):
+    y_true = []
+    y_pred = []
+    for i in xrange(len(emails)):
+        prob, valid = model.predict(emails[i, :], w2v)
+        if valid:
+            y_true.append(1)
+            y_pred.append(prob.data.numpy()[0, 1])
+
+    for i in xrange(len(neg_emails)):
+        prob, valid = model.predict(neg_emails[i, :], w2v)
+        if valid:
+            y_true.append(0)
+            y_pred.append(prob.data.numpy()[0, 1])
 
     return np.array(y_true), np.array(y_pred)
 
@@ -123,10 +142,14 @@ if __name__ == '__main__':
         #     y_true_all.append(this_y_true)
         #     y_pred_all.append(this_y_pred)
         # print metrics.mean_average_precision_at_k(y_true_all, y_pred_all)
+    elif model_name in ('Model4', ):
+        y_true, y_pred = get_predictions_prob(model, w2v, test, neg_emails)
+        print metrics.hits_at_k(y_true, y_pred, k=1000, is_l2=False)
+        print metrics.average_precision_at_k(y_true, y_pred, k=1000, is_l2=False)
 
-    num_hits, num_total, h_by_t, hit_positions = calc_updated_metrics(model, w2v, test, k=10)
-    print num_hits, num_total, h_by_t
-
-    print stats(hit_positions, k_values=[5, 10, 20, 30])
+    # num_hits, num_total, h_by_t, hit_positions = calc_updated_metrics(model, w2v, test, k=10)
+    # print num_hits, num_total, h_by_t
+    #
+    # print stats(hit_positions, k_values=[5, 10, 20, 30])
 
     print 'End of script! Time taken ' + str(time.time() - start)
