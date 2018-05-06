@@ -519,3 +519,6 @@ def plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False):
 # email_ids, embs = load_user_embeddings('../important_embeddings/usr100d_em200d_25ep_m2faster/embeddings_usr100d_em200d_25ep_m2faster.pkl')
 # embs, labels = extract_emb_desgn(email_ids, embs, cat='cat1')
 # plot_with_tsne(labels.tolist(), embs, display_hover=False)
+# email_ids, embs = load_user_embeddings('../important_embeddings/embeddings_usr50d_em100d_custom_25ep_m3/embeddings_usr50d_em100d_custom_25ep_m3.pkl')
+# embs, labels = extract_emb_desgn(email_ids, embs, cat='cat1')
+# plot_with_tsne(labels.tolist(), embs)

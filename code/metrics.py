@@ -145,7 +145,6 @@ def k_fold_cross_validation(email_ids, embs):
     print classification_report(y_t, y_p)
 
 
-
 def dominance_metric(email_ids, embs):
     train_users, train_embs, test_users, test_embs = utils.split_by_users(email_ids, embs)
     # X, y = utils.get_dominance_data(email_ids, embs)
@@ -174,6 +173,14 @@ if __name__ == '__main__':
     # email_ids, embs = utils.load_user_embeddings('../important_embeddings/embeddings_test2.pkl')
     # k_fold_cross_validation(email_ids, embs)
     # dominance_metric(email_ids, embs)
+
+
+if __name__ == '__main__':
+    # email_ids, embs = utils.load_user_embeddings(
+    #     '../important_embeddings/usr100d_em200d_20ep_m3/embeddings_usr100d_em200d_20ep_m3.pkl')
+    # k_fold_cross_validation(email_ids, embs)
+    email_ids, embs = utils.load_user_embeddings('../resources/embeddings_dundundun.pkl')
+    dominance_metric(email_ids, embs)
     # y_true = np.array([1, 0, 1, 0, 1])
     # # expected sort order -> 1 1 0 0 1
     # y_pred_prob = np.array([0.6, 0.4, 0.7, 0.55, 0.0])
