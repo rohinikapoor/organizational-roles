@@ -7,6 +7,7 @@ import torch.optim as optim
 import random
 
 import constants
+import dal
 import plots
 import utils
 
@@ -40,6 +41,8 @@ class Model4(nn.Module, Model):
         self.relu = nn.ReLU()
         # final linear layer that outputs the predicted email representation
         self.output_layer = nn.Linear(500, 2)
+        if pre_trained:
+            self.load(load_from)
 
     def forward(self, s_id, r_ids, email_rep):
         """
@@ -70,12 +73,23 @@ class Model4(nn.Module, Model):
         pos_label = autograd.Variable(torch.LongTensor([1]))  # labels for correct mails
         neg_label = autograd.Variable(torch.LongTensor([0]))  # labels for incorrect mails
 
+        neg_emails = dal.get_negative_emails(emails, fraction=1.0)
+
         for epoch in range(epochs):
             epoch_loss = 0.0
             start = time.time()
             for i in range(len(emails)):
                 optimizer.zero_grad()
-                loss, valid = self.predict(emails[i, :], w2v)
+                loss, valid = self.predict(emails[i, :], w2v, label=pos_label, training_mode=True)
+                if valid:
+                    # propagate the loss backward and compute the gradient
+                    loss.backward()
+                    # change weights based on gradient value
+                    optimizer.step()
+                    epoch_loss += loss.data.numpy()
+                    optimizer.zero_grad()
+
+                loss, valid = self.predict(neg_emails[i, :], w2v, label=neg_label, training_mode=True)
                 if valid:
                     # propagate the loss backward and compute the gradient
                     loss.backward()
@@ -94,43 +108,7 @@ class Model4(nn.Module, Model):
         # utils.get_similar_users(email_ids, embs)
         plots.plot_with_tsne(email_ids, embs, display_hover=False)
 
-
-        # for recv in recv_list:
-        #     optimizer.zero_grad()
-        #     recv_id = utils.get_userid(recv)
-        #     # if sender or receiver is not an enron email id, we ignore this data point
-        #     if sender_id is None or recv_id is None:
-        #         continue
-        #     # if valid sender and receiver pairs have been found update their frequencies
-        #     self.emailid_train_freq[emails[i, constants.SENDER_EMAIL]] = self.emailid_train_freq.get(
-        #         emails[i, constants.SENDER_EMAIL], 0) + 1
-        #     self.emailid_train_freq[recv] = self.emailid_train_freq.get(recv, 0) + 1
-        #     # do the forward pass
-        #     pred_out = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
-        #                             autograd.Variable(torch.LongTensor([recv_id])),
-        #                             autograd.Variable(torch.from_numpy(email_rep)))
-        #
-        #     loss = loss_criteria(pred_out, pos_label)
-        #     # propagate the loss backward and compute the gradient
-        #     loss.backward()
-        #     # change weights based on gradient value
-        #     optimizer.step()
-        #
-        #     # now train for a negative sample
-        #     # get a random email from all_emails where the receiver is not recr, and the mail is not empty
-        #     while True:
-        #         msg_indx = random.randint(0, emails_len - 1)
-        #         if utils.get_userid(emails[msg_indx, constants.RECEIVER_EMAILS]) != recv_id and type(
-        #                 email_reps[msg_indx]) != type(None):
-        #             break
-        #     optimizer.zero_grad()
-        #     neg_email_rep = email_reps[msg_indx]
-        #     pred_neg_out = self.forward(autograd.Variable(torch.LongTensor([sender_id])),
-        #                                 autograd.Variable(torch.LongTensor([recv_id])),
-        #                                 autograd.Variable(torch.from_numpy(neg_email_rep)))
-        #     loss = loss_criteria(pred_neg_out, neg_label)
-
-    def predict(self, email, w2v):
+    def predict(self, email, w2v, label=None, training_mode=False):
         loss_criteria = nn.CrossEntropyLoss()
 
         sender_id = utils.get_userid(email[constants.SENDER_EMAIL])
@@ -164,9 +142,12 @@ class Model4(nn.Module, Model):
         # do the forward pass
         pred_out = self.forward(sender_id, recv_ids, email_rep)
         # compute the loss
-        # loss = loss_criteria(pred_email_rep, autograd.Variable(torch.from_numpy(email_rep)))
-        out_probs = nn.Softmax()(pred_out)
-        return out_probs, True
+        if training_mode:
+            loss = loss_criteria(pred_out, label)
+            return loss, True
+        else:
+            out_probs = nn.Softmax()(pred_out)
+            return out_probs, True
 
     def get_repr(self, identifier):
         pass

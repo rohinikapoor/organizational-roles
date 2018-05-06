@@ -34,7 +34,7 @@ if __name__ == '__main__':
         num_users = 150
     utils.populate_userid_mapping()
     NUM_EMAILS = 10000
-    PRE_TRAINED = True
+    PRE_TRAINED = False
 
     model = locals()[model_name](pre_trained=PRE_TRAINED, load_from='{}_model.pth'.format(constants.RUN_ID))
     # w2v = W2VCustom()
