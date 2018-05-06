@@ -112,7 +112,7 @@ def stats(hit_positions, k_values):
         print k, np.sum(hit_positions < k) / (len(hit_positions) + 0.0)
 
 
-def _rank_senders_by_emails(model, w2v, emails, k=10):
+def _rank_senders_by_emails(model, w2v, emails, k=10, is_l2=True):
     employee_list, _ = model.extract_user_embeddings()
     k = min(k, len(employee_list))
     num_hits = 0.0
@@ -129,10 +129,17 @@ def _rank_senders_by_emails(model, w2v, emails, k=10):
             if valid:
                 num_total += 1 if employee == employee_list[actual_sender_idx] else 0
                 this_y_true.append(1 if employee == employee_list[actual_sender_idx] else 0)
-                this_y_pred.append(np.asscalar(loss.data.numpy()))
+                if is_l2:
+                    this_y_pred.append(np.asscalar(loss.data.numpy()))
+                else:
+                    this_y_pred.append(loss.data.numpy()[0, 1])
+
         this_y_true = np.array(this_y_true)
         this_y_pred = np.array(this_y_pred)
-        sort_order = this_y_pred.argsort()
+        if is_l2:
+            sort_order = this_y_pred.argsort()
+        else:
+            sort_order = (-this_y_pred).argsort()
         num_hits += np.sum(this_y_true[sort_order][:k])
         if this_y_true.shape[0]:
             hit_positions.append(np.argmax(this_y_true[sort_order]))
@@ -174,7 +181,7 @@ def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
             y_pred_all.append(this_y_pred)
         print 'MAP@{}'.format(k), mean_average_precision_at_k(y_true_all, y_pred_all)
     if 'ryan-hits@k' in metrics:
-        num_hits, num_total, h_by_t, hit_positions = _rank_senders_by_emails(model, w2v, test, k=10)
+        num_hits, num_total, h_by_t, hit_positions = _rank_senders_by_emails(model, w2v, test, k=10, is_l2=is_l2)
         print 'Rank senders by emails:', stats(hit_positions, k_values=[5, 10, 20, 30])
 
 
