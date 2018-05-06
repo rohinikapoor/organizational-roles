@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import constants
+import plots
 import utils
 
 from model import Model
@@ -85,7 +86,7 @@ class Model3(nn.Module, Model):
         email_ids, embs = self.extract_user_embeddings()
         utils.save_user_embeddings(email_ids, embs)
         # utils.get_similar_users(email_ids, embs)
-        utils.plot_with_tsne(email_ids, embs, display_hover=False)
+        plots.plot_with_tsne(email_ids, embs, display_hover=False)
 
     def predict(self, email, w2v):
         loss_criteria = nn.MSELoss()
