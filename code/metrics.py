@@ -1,4 +1,7 @@
 import numpy as np
+
+import constants
+import metrics_utils
 import utils
 
 
@@ -61,7 +64,7 @@ def _calc_average_precision(y_true, k):
         correct += y_true[i]
         precision = correct / (i + 1.0)
         ap += precision * y_true[i]
-    return ap / min(k, np.asscalar(np.sum(y_true)))
+    return 1 if min(k, np.asscalar(np.sum(y_true))) == 0 else ap / min(k, np.asscalar(np.sum(y_true)))
 
 
 def average_precision_at_k(y_true, y_pred=None, k=None, is_l2=False):
@@ -104,6 +107,84 @@ def mean_average_precision_at_k(y_true, y_pred, k=None, is_l2=False):
     return mean_ap_pos / len(y_true), mean_ap_neg / len(y_true)
 
 
+def stats(hit_positions, k_values):
+    for k in k_values:
+        print k, np.sum(hit_positions < k) / (len(hit_positions) + 0.0)
+
+
+def _rank_senders_by_emails(model, w2v, emails, k=10, is_l2=True):
+    employee_list, _ = model.extract_user_embeddings()
+    k = min(k, len(employee_list))
+    num_hits = 0.0
+    num_total = 0
+    hit_positions = []
+    for i in xrange(emails.shape[0]):
+        actual_sender_idx = employee_list.index(emails[i, constants.SENDER_EMAIL])
+        this_email = emails[i, :]
+        this_y_true = []
+        this_y_pred = []
+        for employee in employee_list:
+            this_email[constants.SENDER_EMAIL] = employee
+            loss, valid = model.predict(this_email, w2v)
+            if valid:
+                num_total += 1 if employee == employee_list[actual_sender_idx] else 0
+                this_y_true.append(1 if employee == employee_list[actual_sender_idx] else 0)
+                if is_l2:
+                    this_y_pred.append(np.asscalar(loss.data.numpy()))
+                else:
+                    this_y_pred.append(loss.data.numpy()[0, 1])
+
+        this_y_true = np.array(this_y_true)
+        this_y_pred = np.array(this_y_pred)
+        if is_l2:
+            sort_order = this_y_pred.argsort()
+        else:
+            sort_order = (-this_y_pred).argsort()
+        num_hits += np.sum(this_y_true[sort_order][:k])
+        if this_y_true.shape[0]:
+            hit_positions.append(np.argmax(this_y_true[sort_order]))
+    return num_hits, num_total, num_hits / num_total, np.array(hit_positions)
+
+
+def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
+                     metrics=('hits@k', 'ap@k', 'map@k', 'ryan-hits@k')):
+    """
+    :param model: trained model whose performance is to be evaluated
+    :param model_name: which class the model belongs to
+    :param w2v: word vector embedding model
+    :param test: test emails to run the evaluation on
+    :param neg_emails: negatively sampled emails to run the evaluation on
+    :param k: number of emails to be considered for evaluation
+    :param metrics: types of metrics to be calculated
+    :return: None
+    """
+    if model_name in ('Model1', 'Model2', 'Model2Faster', 'Model3'):
+        is_l2 = True
+    elif model_name in ('Model4', ):
+        is_l2 = False
+    else:
+        raise NotImplementedError('Model {} has not been implemented'.format(model_name))
+
+    y_true, y_pred = metrics_utils.get_predictions(model, w2v, test, neg_emails, is_l2)
+
+    if 'hits@k' in metrics:
+        print 'Hits@{}'.format(k), hits_at_k(y_true, y_pred, k=k, is_l2=is_l2)
+    if 'ap@k' in metrics:
+        print 'AP@{}'.format(k), average_precision_at_k(y_true, y_pred, k=k, is_l2=is_l2)
+    if 'map@k' in metrics:
+        mails_grouped_by_sender = utils.group_mails_by_sender(test)
+        y_true_all, y_pred_all = [], []
+        for sender in mails_grouped_by_sender:
+            this_y_true, this_y_pred = metrics_utils.get_predictions(model, w2v, mails_grouped_by_sender[sender], [],
+                                                                     is_l2)
+            y_true_all.append(this_y_true)
+            y_pred_all.append(this_y_pred)
+        print 'MAP@{}'.format(k), mean_average_precision_at_k(y_true_all, y_pred_all)
+    if 'ryan-hits@k' in metrics:
+        num_hits, num_total, h_by_t, hit_positions = _rank_senders_by_emails(model, w2v, test, k=10, is_l2=is_l2)
+        print 'Rank senders by emails:', stats(hit_positions, k_values=[5, 10, 20, 30])
+
+
 def k_fold_cross_validation(email_ids, embs):
     # extract the data
     X, y = utils.extract_emb_desgn(email_ids, embs)
@@ -126,7 +207,7 @@ def k_fold_cross_validation(email_ids, embs):
         y_p = np.append(y_p, y_pred)
     print (cor * 1.0) / len(y)
 
-    #plot the confusion matrix
+    # plot the confusion matrix
     confusion_matrix(y_t, y_p)
 
 

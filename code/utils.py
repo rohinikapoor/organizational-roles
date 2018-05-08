@@ -4,22 +4,17 @@ This file will contain helper methods for use across files
 import csv
 import heapq
 import numpy as np
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt, mpld3
 import pickle
-import seaborn as sb
-import time
 
 import constants
 
-from sklearn.manifold import TSNE
 from sklearn.model_selection import train_test_split
 
 
 # A dictionary that stores a mapping of unique_id to email_id. This unique_id is used to lookup the embeddings in
 # nn.Embeddings layer
 user_id_lookup = {}
+
 
 def get_userid(u):
     """
@@ -44,98 +39,6 @@ def populate_userid_mapping():
     mapping = np.loadtxt('../resources/employee_id_mapping.csv', dtype='str', delimiter=',', skiprows=1)
     for m in mapping:
         user_id_lookup[m[0]] = int(m[1])
-
-
-def assign_labels_colors(labels, colors):
-    """
-    Takes a list of labels and colors and assigns a unique label to each color. Returns a color_list of length(labels).
-    The colors will loop around if the number of unique labels are more than the number of unique colors
-    :param labels:
-    :param colors:
-    :return: color_list
-    """
-    col_idx = 0
-    label2col = {}
-    col_list = []
-    for i in range(len(labels)):
-        if labels[i] in label2col:
-            col_list.append(label2col[labels[i]])
-        else:
-            col = colors[col_idx%len(colors)]
-            col_idx += 1
-            label2col[labels[i]] = col
-            col_list.append(col)
-    return col_list
-
-
-def plot_with_tsne(labels, embeddings, display_hover=True):
-    """
-    expects a list of email_ids and numpy ndarray of embeddings. The numpy ndarray should have shape L,D where D is the
-    size of embeddings and L is the number of users
-    """
-    tsne = TSNE(verbose=1, method='exact')
-    start = time.time()
-    tsne_embs = tsne.fit_transform(embeddings)
-    end = time.time()
-    print('time taken by TSNE ', (end-start))
-
-    # creating the colors
-    colors = list(sb.color_palette().as_hex())
-    color_list = assign_labels_colors(labels, colors)
-
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:, 1], c=color_list, s=75)
-    if display_hover:
-        tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
-        mpld3.plugins.connect(fig, tooltip)
-        mpld3.show()
-    else:
-        outfile = '../outputs/' + constants.RUN_ID + '_tsne-users.png'
-        plt.savefig(outfile)
-
-
-def plot_emails_with_tsne(email_data, w2v, display_hover=True):
-    """
-    below code generates embedding for each email (using w2v model) and plots the embedding using unique sender color
-    """
-    sb_color_list = sb.xkcd_rgb.values()
-    color_pos = 0
-    sender2color_map = {}
-    embeddings = []
-    plot_color_list = []
-    plot_senders = []
-    for i in range(len(email_data)):
-        sender = email_data[i, 0]
-        if get_userid(sender) is None:
-            continue
-        if sender in sender2color_map:
-            sender_color = sender2color_map[sender]
-        else:
-            sender2color_map[sender] = sb_color_list[color_pos]
-            sender_color = sb_color_list[color_pos]
-            color_pos += 1
-        email_words_emb = w2v.get_sentence(email_data[i, 2])
-        if len(email_words_emb) == 0:
-            continue
-        embeddings.append(np.mean(email_words_emb, axis=0))
-        plot_color_list.append(sender_color)
-        plot_senders.append(sender)
-
-    # run tsne, the number of emails can get very large ~70k
-    tsne = TSNE(verbose=1)
-    start = time.time()
-    tsne_embs = tsne.fit_transform(embeddings)
-    end = time.time()
-    print('time taken by TSNE ', (end - start))
-
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(tsne_embs[:, 0], tsne_embs[:, 1], c=plot_color_list, s=70)
-    if display_hover:
-        tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=plot_senders)
-        mpld3.plugins.connect(fig, tooltip)
-        mpld3.show()
-    else:
-        plt.savefig('../outputs/tsne-emails.png')
 
 
 def get_nearest_neighbors_emails(data, w2v, nb_size=3):
@@ -196,7 +99,6 @@ def load_user_embeddings(filepath):
     """
     email_ids, embeddings = pickle.load(open(filepath, "rb"))
     return email_ids, embeddings
-
 
 
 def get_similar_users(labels, embeddings, nb_size=3):
@@ -331,6 +233,17 @@ def get_dominance_relation(dg1, dg2, emb1, emb2, desgn_order):
     return pair_emb, y
 
 
+def group_mails_by_sender(emails):
+    dataset = {}
+    for sender, receivers, email, date in emails:
+        if sender not in dataset:
+            dataset[sender] = list()
+        dataset[sender].append((sender, receivers, email, date))
+    for sender in dataset:
+        dataset[sender] = np.array(dataset[sender])
+    return dataset
+
+
 def split_by_users(email_ids, embs):
     tr, te = get_user_split(email_ids)
     train_set_usr, test_set_usr = set(tr), set(te)
@@ -378,6 +291,7 @@ def get_emailid_freq():
         em_freq = pickle.load(f)
     return em_freq
 
+# TODO: Clean up these statements if they are no longer required
 # em_freq = get_emailid_freq()
 # email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_m2faster_20ep/embeddings_usr50d_em50d_m2faster_20ep.pkl')
 # designations = load_user_designations(cat='None')
