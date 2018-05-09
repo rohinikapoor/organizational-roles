@@ -40,17 +40,6 @@ class Model2Deeper(nn.Module, Model):
         if pre_trained:
             self.load(load_from)
 
-    def create_hidden_layers(self, inp_dim, hidden_dims, use_batchnorm):
-        hidden_layers = nn.Sequential()
-        for i, hd_dim in enumerate(hidden_dims):
-            hidden_layers.add_module('linear' + str(i), nn.Linear(inp_dim, hd_dim))
-            out_dim = hd_dim
-            if use_batchnorm:
-                hidden_layers.add_module('batchnorm' + str(i), nn.BatchNorm1d(out_dim))
-            hidden_layers.add_module('relu' + str(i), nn.ReLU())
-            inp_dim = out_dim
-        return hidden_layers, inp_dim
-
     def forward(self, s_id, r_ids, prev_next_embs):
         """
         Input is an integer sender_id, list of receiver_ids and a matrix containing all possible prev_next embeddings.

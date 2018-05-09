@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.autograd as autograd
 import constants
 
@@ -58,3 +59,14 @@ class Model:
             emb_np = emb.data.numpy().reshape(-1)
             embeddings.append(emb_np)
         return email_ids, np.array(embeddings)
+
+    def create_hidden_layers(self, inp_dim, hidden_dims, use_batchnorm):
+        hidden_layers = nn.Sequential()
+        for i, hd_dim in enumerate(hidden_dims):
+            hidden_layers.add_module('linear' + str(i), nn.Linear(inp_dim, hd_dim))
+            out_dim = hd_dim
+            if use_batchnorm:
+                hidden_layers.add_module('batchnorm' + str(i), nn.BatchNorm1d(out_dim))
+            hidden_layers.add_module('relu' + str(i), nn.ReLU())
+            inp_dim = out_dim
+        return hidden_layers, inp_dim
