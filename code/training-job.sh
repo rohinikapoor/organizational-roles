@@ -24,8 +24,7 @@ echo 'RUN_ID = ' $RUN_ID
 # second command-line argument model-name
 MODEL_NAME="${vals[1]}"
 echo 'Running Model = ' $MODEL_NAME
-if [ $MODEL_NAME != "Model1" -a $MODEL_NAME != "Model2" -a $MODEL_NAME != "Model3" -a $MODEL_NAME != "Model4" -a
-$MODEL_NAME != "Model2Deeper" -a $MODEL_NAME != "Model3Deeper" ]
+if [ $MODEL_NAME != "Model1" -a $MODEL_NAME != "Model2" -a $MODEL_NAME != "Model3" -a $MODEL_NAME != "Model4" -a $MODEL_NAME != "Model2Deeper" -a $MODEL_NAME != "Model3Deeper" ]
 	then echo 'Error! Invalid Model'
 	exit -1
 fi
