@@ -31,6 +31,7 @@ class Model:
         """
         Saves the model weights to file so that they can be later loaded for inference purposes
         """
+        print 'Saving the model'
         torch.save(self.state_dict(), constants.MODEL_DIR + filename)
 
     def load(self, filename):

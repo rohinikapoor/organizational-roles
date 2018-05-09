@@ -17,3 +17,6 @@ RUN_ID = sys.argv[1]
 
 # constant paths w.r.t to code directory
 MODEL_DIR = '../models/'
+
+# configure the number of hidden layers
+HIDDEN_DIMS = [256, 256]

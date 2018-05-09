@@ -8,11 +8,13 @@ import torch.optim as optim
 import constants
 import plots
 import utils
+import metrics
+import dal
 
 from model import Model
 
 
-class Model2Faster(nn.Module, Model):
+class Model2Deeper(nn.Module, Model):
     """
     Contains the code for faster Model2.
     Architecture - [sr_embedding + prev_word + next_word] -> linear_layer -> relu_activation -> linear_layer ->
@@ -22,20 +24,32 @@ class Model2Faster(nn.Module, Model):
      - Loss is calculated as L2 loss between predicted_middle_word and actual middle word for the word2vec model
     """
 
-    def __init__(self, pre_trained=False, load_from=None):
+    def __init__(self, pre_trained=False, load_from=None, hidden_dims=[500], use_batchnorm=False):
+        self.val_after_epoch = 1
+        self.best_val = 0.0
         self.emailid_train_freq = {}
-        super(Model2Faster, self).__init__()
+        super(Model2Deeper, self).__init__()
         # embedding lookup for 150 users each have <constants.USER_EMB_SIZE> dimension representation
         self.embedding_layer = nn.Embedding(150, constants.USER_EMB_SIZE)
         # first hidden layer, linear layer with weights <I>x500 where
         # I = 2*constants.USER_EMB_SIZE + 2*constants.EMAIL_EMB_SIZE
-        self.h1_layer = nn.Linear(2*constants.USER_EMB_SIZE + 2*constants.EMAIL_EMB_SIZE, 500)
-        # ReLU activation used
-        self.relu = nn.ReLU()
+        inp_dims = 2 * constants.USER_EMB_SIZE + 2 * constants.EMAIL_EMB_SIZE
+        self.hidden_layers, out_dim = self.create_hidden_layers(inp_dims, hidden_dims, use_batchnorm)
         # final linear layer that outputs the predicted middle word representation
-        self.email_layer = nn.Linear(500, constants.EMAIL_EMB_SIZE)
+        self.email_layer = nn.Linear(out_dim, constants.EMAIL_EMB_SIZE)
         if pre_trained:
             self.load(load_from)
+
+    def create_hidden_layers(self, inp_dim, hidden_dims, use_batchnorm):
+        hidden_layers = nn.Sequential()
+        for i, hd_dim in enumerate(hidden_dims):
+            hidden_layers.add_module('linear' + str(i), nn.Linear(inp_dim, hd_dim))
+            out_dim = hd_dim
+            if use_batchnorm:
+                hidden_layers.add_module('batchnorm' + str(i), nn.BatchNorm1d(out_dim))
+            hidden_layers.add_module('relu' + str(i), nn.ReLU())
+            inp_dim = out_dim
+        return hidden_layers, inp_dim
 
     def forward(self, s_id, r_ids, prev_next_embs):
         """
@@ -57,21 +71,21 @@ class Model2Faster(nn.Module, Model):
         prev_next_embs = autograd.Variable(torch.from_numpy(prev_next_embs))
         # concatenate the s_emb, r_emb with all the rows in prev_next_emb to get one large matrix
         M = self.concatenate_word_user_emb(s_emb, r_emb, prev_next_embs)
-        h1 = self.relu(self.h1_layer(M))
-        word_reps = self.email_layer(h1)
+        hidden_out = self.hidden_layers(M)
+        word_reps = self.email_layer(hidden_out)
         return word_reps
 
     def concatenate_word_user_emb(self, s_emb, r_emb, prev_next_embs):
         """
         The method performs the boradcasting action, where it concatenates every row in prev_next_embs with sr_emb
-        :param s_emb: 
-        :param r_emb: 
-        :param prev_next_embs: 
-        :return: 
+        :param s_emb:
+        :param r_emb:
+        :param prev_next_embs:
+        :return:
         """
         sr_emb = torch.cat([s_emb, r_emb], 1)
         zr = autograd.Variable(torch.zeros(prev_next_embs.shape[0], sr_emb.shape[1]))
-        M = torch.cat([(zr+sr_emb), prev_next_embs], 1)
+        M = torch.cat([(zr + sr_emb), prev_next_embs], 1)
         return M
 
     def generate_all_combinations(self, email_word_reps):
@@ -81,12 +95,13 @@ class Model2Faster(nn.Module, Model):
         """
         curr_embs = []
         prev_next_embs = []
-        for i in range(1, len(email_word_reps)-1):
+        for i in range(1, len(email_word_reps) - 1):
             curr_embs.append(email_word_reps[i])
-            prev_next_embs.append(np.concatenate((email_word_reps[i-1], email_word_reps[i+1])))
+            prev_next_embs.append(np.concatenate((email_word_reps[i - 1], email_word_reps[i + 1])))
         return np.array(prev_next_embs), np.array(curr_embs)
 
-    def train(self, emails, w2v, epochs=10, save_model=True):
+    def train(self, emails, val_data, w2v, epochs=10, save_model=True):
+        neg_val_data = dal.get_negative_emails(val_data, fraction=1.0)
         optimizer = optim.RMSprop(self.parameters(), lr=1e-3, alpha=0.99, momentum=0.0)
 
         for epoch in range(epochs):
@@ -105,13 +120,31 @@ class Model2Faster(nn.Module, Model):
             end = time.time()
             print 'time taken for epoch:', (end - start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+            self.run_validation(epoch, val_data, neg_val_data, w2v)
 
         if save_model:
-            file_name = constants.RUN_ID + '_model.pth'
+            file_name = constants.RUN_ID + '_finalmodel.pth'
             self.save(file_name)
         email_ids, embs = self.extract_user_embeddings()
         utils.save_user_embeddings(email_ids, embs)
         plots.plot_with_tsne(email_ids, embs, display_hover=False)
+
+    def run_validation(self, epoch, val_data, neg_val_data, w2v):
+        """
+        runs validation every configured number of epochs and save the model, if it gives a better validation metric
+        """
+        if epoch % self.val_after_epoch == 0:
+            start = time.time()
+            print 'Starting with validation'
+            res = metrics.evaluate_metrics(self, 'Model2Deeper', w2v, val_data, neg_val_data, k=500,
+                                           metrics=['hits@k'])
+            hits_res = res['hits@k']
+            if hits_res[0] > self.best_val:
+                self.best_val = hits_res[0]
+                file_name = constants.RUN_ID + '_model.pth'
+                self.save(file_name)
+            end = time.time()
+            print 'validation time:', (end - start)
 
     def predict(self, email, w2v):
         loss_criteria = nn.MSELoss()
