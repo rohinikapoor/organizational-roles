@@ -68,6 +68,25 @@ def dataset_split(data, val_split=0.0, test_split=0.3):
     return train_data, val_data, test_data
 
 
+def dataset_filter_by_user(data, val_split=0.0, test_split=0.3, threshold=1):
+    train, val, test = [], [], []
+    mails_by_senders = utils.group_mails_by_sender(data)
+    for sender in mails_by_senders:
+        mails = mails_by_senders[sender]
+
+        train_split = int((1 - val_split - test_split) * len(mails))
+        val_split = train_split + int(val_split * len(mails))
+
+        mails = np.array(sorted(mails, key=lambda x: x[3]))
+        train.append(mails[: train_split])
+
+        if train_split > threshold:
+            val.append(mails[train_split: val_split])
+            test.append(mails[val_split:])
+
+    return np.concatenate(train), np.concatenate(val), np.concatenate(test)
+
+
 def get_negative_emails(emails, fraction=1.0):
     """
     Get examples of mails not sent by sender and receiver pairs as negative examples for classification
@@ -85,7 +104,7 @@ def get_negative_emails(emails, fraction=1.0):
 
     num_examples = min(int(len(emails) * fraction), len(data))
     random_state = random.getstate()
-    random.seed(42)
+    random.seed(47)
     random.shuffle(data)
     data = data[:num_examples]
     i = 0
