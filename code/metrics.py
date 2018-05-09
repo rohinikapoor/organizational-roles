@@ -5,7 +5,7 @@ import metrics_utils
 import utils
 
 
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.svm import SVC
 
@@ -187,28 +187,43 @@ def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
 
 def k_fold_cross_validation(email_ids, embs):
     # extract the data
-    X, y = utils.extract_emb_desgn(email_ids, embs)
+    X, y = utils.extract_emb_desgn(email_ids, embs, cat='cat1')
+    print np.unique(y, return_counts=True)
     # split the data into k-folds
     kf = KFold(n_splits=23, shuffle=True)
     # run k-fold cross validation
     cor = 0
+    train_acc = []
     y_t = np.array([])
     y_p = np.array([])
+    correct_class = {}
     for train_index, test_index in kf.split(X):
         X_train = X[train_index]
         y_train = y[train_index]
         X_test = X[test_index]
         y_test = y[test_index]
-        classifier = SVC()
+        classifier = SVC(C=1)
         classifier.fit(X_train, y_train)
         y_pred = classifier.predict(X_test)
+        for i in range(len(y_pred)):
+            if y_pred[i] == y_test[i]:
+                c_score = correct_class.get(y_test[i], 0)
+                c_score += 1
+                correct_class[y_test[i]] = c_score
+
+        y_train_pred = classifier.predict(X_train)
         cor = cor + np.sum(y_pred == y_test)
+        train_acc.append((1.0*np.sum(y_train_pred == y_train))/len(y_train))
         y_t = np.append(y_t, y_test)
         y_p = np.append(y_p, y_pred)
-    print (cor * 1.0) / len(y)
+    print 'test acc:', (cor * 1.0) / len(y)
+    print 'train acc:', np.mean(train_acc)
+    print correct_class
+    print np.unique(y, return_counts=True)
 
-    # plot the confusion matrix
-    confusion_matrix(y_t, y_p)
+    #plot the confusion matrix
+    print confusion_matrix(y_t, y_p)
+    print classification_report(y_t, y_p)
 
 
 def dominance_metric(email_ids, embs):
@@ -217,6 +232,7 @@ def dominance_metric(email_ids, embs):
     # print np.unique(y, return_counts=True)
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, shuffle=True)
     X_train, y_train = utils.get_dominance_data(train_users, train_embs)
+    print np.unique(y_train, return_counts=True)
     X_test, y_test = utils.get_dominance_data(test_users, test_embs)
     print X_train.shape, y_train.shape
     print X_test.shape, y_test.shape
@@ -226,6 +242,9 @@ def dominance_metric(email_ids, embs):
     y_pred_test = classifier.predict(X_test)
     print 'train_acc:', np.mean(y_pred_train == y_train)
     print 'test_acc:', np.mean(y_pred_test == y_test)
+    print np.unique(y_test, return_counts=True)
+    print confusion_matrix(y_test, y_pred_test)
+    print classification_report(y_test, y_pred_test)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,6 @@
-import matplotlib as mpl; mpl.use('Agg')  # The cluster cannot process other graphic engines
+import matplotlib as mpl;
+
+mpl.use('Agg')  # The cluster cannot process other graphic engines
 import matplotlib.pyplot as plt
 import mpld3
 import numpy as np
@@ -26,7 +28,7 @@ def _assign_labels_colors(labels, colors):
         if labels[i] in label2col:
             col_list.append(label2col[labels[i]])
         else:
-            col = colors[col_idx%len(colors)]
+            col = colors[col_idx % len(colors)]
             col_idx += 1
             label2col[labels[i]] = col
             col_list.append(col)
@@ -42,14 +44,14 @@ def plot_with_tsne(labels, embeddings, display_hover=True):
     start = time.time()
     tsne_embs = tsne.fit_transform(embeddings)
     end = time.time()
-    print('time taken by TSNE ', (end-start))
+    print('time taken by TSNE ', (end - start))
 
     # creating the colors
     colors = list(sb.color_palette().as_hex())
     color_list = _assign_labels_colors(labels, colors)
 
     fig, ax = plt.subplots()
-    scatter = ax.scatter(tsne_embs[:,0], tsne_embs[:, 1], c=color_list, s=75)
+    scatter = ax.scatter(tsne_embs[:, 0], tsne_embs[:, 1], c=color_list, s=75)
     if display_hover:
         tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
         mpld3.plugins.connect(fig, tooltip)
@@ -121,8 +123,8 @@ def plot_bar_charts(labels, vals, ylabel, title, ymax, baseline=None, display_pl
     x_pos = np.arange(len(labels))
     # acc = [60.47, 48.60, 43.47]
     if baseline is not None:
-        line_x = np.arange(-1,len(labels)+1)
-        baseline_y = np.zeros(len(line_x))+baseline
+        line_x = np.arange(-1, len(labels) + 1)
+        baseline_y = np.zeros(len(line_x)) + baseline
         line, = plt.plot(line_x, baseline_y, color='k', label='Baseline', linewidth=2)
         plt.legend()
     plt.bar(x_pos, vals, align='center', width=0.3, color=['#EC7063', '#2ECC71', '#3498DB'])  # color='#3498DB')
@@ -138,13 +140,6 @@ def plot_bar_charts(labels, vals, ylabel, title, ymax, baseline=None, display_pl
     else:
         outfile = '../outputs/' + title + '.png'
         plt.savefig(outfile)
-
-
-# labels = ['SR Model', 'PV Model', 'Discriminative']
-# vals = [60.47, 48.60, 54.94]
-# ylabel = 'Accuracy'
-# title = 'Accuracy for Hierarchy Relations'
-# plot_bar_charts(labels, vals, ylabel, title, ymax=100.0, baseline=37.64)
 
 
 def plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False):
@@ -182,19 +177,83 @@ def plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False):
         plt.savefig(outfile)
 
 
-# labels = ['SR Model', 'PV Model', 'Discriminative']
-# ymax = 0.8
-#
-# title = 'Hits @ 1000'
-# vals = np.array([[0.57, 0.38],
-#                    [0.74, 0.50],
-#                    [0.53, 0.51]])
-# ylabel = 'Hit ratio'
-# plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
-#
-# title = 'AP @ 1000'
-# vals = np.array([[0.30, 0.16],
-#                    [0.58, 0.28],
-#                    [0.29, 0.28]])
-# ylabel = 'Average Precision'
-# plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
+if __name__ == '__main__':
+    labels = ['SR Model', 'PV Model', 'Discriminative']
+    ymax = 1.0
+
+    title = 'Hits @ 1000'
+    vals = np.array([[0.57, 0.38],
+                     [0.74, 0.50],
+                     [0.529, 0.514]])
+    ylabel = 'Hit ratio'
+    plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
+
+    # labels = ['SR Model', 'PV Model', 'Discriminative']
+    # vals = [60.47, 48.60, 54.94]
+    # ylabel = 'Accuracy'
+    # title = 'Accuracy for Hierarchy Relations'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=100.0, baseline=37.64)
+    #
+    # title = 'AP @ 1000'
+    # vals = np.array([[0.30, 0.16],
+    #                  [0.58, 0.28],
+    #                  [0.29, 0.28]])
+    # ylabel = 'Average Precision'
+    # plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
+    #
+    # labels = ['SR Model', 'PV Model', 'Discriminative']
+    # vals = [60.47, 48.60, 54.94]
+    # ylabel = 'Accuracy'
+    # title = 'Accuracy for Hierarchy Relations'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=100.0, baseline=37.64)
+    #
+    # labels = ['Lower', 'Equal', 'Higher']
+    # vals = [36.12, 26.23, 37.64]  # 4186
+    # ylabel = 'Percentage Distribution'
+    # title = 'Class Distribution for Hierarchy Relation'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=50, baseline=None)
+    #
+    # labels = ['SR Model', 'PV Model', 'Discriminative']
+    # vals = [48.69, 43.47, 42.6]
+    # ylabel = 'Accuracy'
+    # title = 'Accuracy for Role Prediction'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=100.0, baseline=34.78)
+    #
+    # labels = ['CEO/Presidents', 'Directors', 'Employee', 'Manager', 'Others']
+    # vals = [26.95, 13.91, 34.78, 12.17, 12.17]  # [31, 16, 40, 14, 14]
+    # ylabel = 'Percentage Distribution'
+    # title = 'Class Distribution for Role Prediction'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=50, baseline=None)
+    #
+    # labels = ['CEO/Presidents', 'Directors', 'Employee', 'Manager', 'Others']
+    # vals = [0.67, 0.0, 0.56, 0.0, 0.0]
+    # ylabel = 'F-score'
+    # title = 'Class-wise F-score for Role Prediction'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=1.0, baseline=None)
+    #
+    # labels = ['Lower', 'Equal', 'Higher']
+    # vals = [0.72, 0.20, 0.71]
+    # ylabel = 'F-score'
+    # title = 'Class-wise F-score for Hierarchy Relation'
+    # plot_bar_charts(labels, vals, ylabel, title, ymax=1.0, baseline=None)
+    #
+    # labels = ['SR Model', 'PV Model', 'Discriminative']
+    # ymax = 0.8
+    #
+    # title = 'Hits @ 1000'
+    # vals = np.array([[0.57, 0.38],
+    #                  [0.74, 0.50],
+    #                  [0.53, 0.51]])
+    # ylabel = 'Hit ratio'
+    # plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
+    #
+    # title = 'AP @ 1000'
+    # vals = np.array([[0.30, 0.16],
+    #                  [0.58, 0.28],
+    #                  [0.29, 0.28]])
+    # ylabel = 'Average Precision'
+    # plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
+
+    # email_ids, embs = load_user_embeddings('../important_embeddings/embeddings_usr50d_em100d_custom_25ep_m3/embeddings_usr50d_em100d_custom_25ep_m3.pkl')
+    # embs, labels = extract_emb_desgn(email_ids, embs, cat='cat1')
+    # plot_with_tsne(labels.tolist(), embs)

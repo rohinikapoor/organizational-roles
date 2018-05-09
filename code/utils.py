@@ -203,6 +203,11 @@ def get_dominance_data(email_ids, embs):
                    'Vice President': 4,
                    'President': 5,
                    'CEO': 6}
+    # desgn_order = {'Others': 3,
+    #                'Employee': 3,
+    #                'Manager': 4,
+    #                'Directors': 5,
+    #                'CEO/Presidents': 6}
     user_desgn = load_user_designations(cat='None')
     dom_embs = []
     dom_y = []
@@ -290,18 +295,3 @@ def get_emailid_freq():
     with open('../resources/emailid_mailfreq.pkl', 'rb') as f:
         em_freq = pickle.load(f)
     return em_freq
-
-# TODO: Clean up these statements if they are no longer required
-# em_freq = get_emailid_freq()
-# email_ids, embs = load_user_embeddings('../important_embeddings/usr50d_em50d_m2faster_20ep/embeddings_usr50d_em50d_m2faster_20ep.pkl')
-# designations = load_user_designations(cat='None')
-# email_set = set(email_ids)
-# desgn_set = set(designations.keys())
-# email_set = email_set.intersection(desgn_set)
-# split_by_users(email_ids, embs)
-# get_user_split(list(email_set), em_freq)
-# x, y = get_dominance_data(email_ids, embs)
-# k_fold_cross_validation(email_ids, embs)
-# email_ids, embs = load_user_embeddings('../important_embeddings/embeddings_usr50d_em100d_custom_25ep_m3/embeddings_usr50d_em100d_custom_25ep_m3.pkl')
-# embs, labels = extract_emb_desgn(email_ids, embs, cat='cat1')
-# plot_with_tsne(labels.tolist(), embs)
