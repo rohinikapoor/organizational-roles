@@ -3,6 +3,8 @@ This script orchestrates the entire model's lifecycle via a single pipeline
 Multiple flags can be used to enable and disable certain sections of the pipeline
 """
 
+import numpy as np
+import os
 import sys
 import time
 
