@@ -22,7 +22,7 @@ class Model2(nn.Module, Model):
      - Loss is calculated as L2 loss between predicted_middle_word and actual middle word for the word2vec model
     """
 
-    def __init__(self, pre_trained=False, load_from=None):
+    def __init__(self, pre_trained=False, load_from=None, hidden_dims=[500]):
         self.emailid_train_freq = {}
         super(Model2, self).__init__()
         # embedding lookup for 150 users each have <constants.USER_EMB_SIZE> dimension representation

@@ -22,7 +22,7 @@ class Model3(nn.Module, Model):
      representation is obtained by averaging embeddings from pre-trained word2vec model
     """
 
-    def __init__(self, pre_trained=False, load_from=None):
+    def __init__(self, pre_trained=False, load_from=None, hidden_dims=[500]):
         # keeps track of how many times the model has seen each email_id, either as a sender or receiver
         self.emailid_train_freq = {}
         super(Model3, self).__init__()
