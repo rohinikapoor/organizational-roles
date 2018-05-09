@@ -9,6 +9,7 @@ import time
 import constants
 import dal
 import metrics
+import metrics_utils
 import utils
 
 from model1 import Model1
@@ -60,11 +61,47 @@ if __name__ == '__main__':
     if not PRE_TRAINED:
         model.train(train, w2v, num_epochs)
 
-    neg_emails = dal.get_negative_emails(test, fraction=1.0)
-    print 'Number of negative emails returned by dal', len(neg_emails)
+    # neg_emails = dal.get_negative_emails(test, fraction=1.0)
+    # print 'Number of negative emails returned by dal', len(neg_emails)
+
+    # neg_emails_train = dal.get_negative_emails(train, fraction=1.0)
+    # y_true, y_pred = metrics_utils.get_predictions(model, w2v, train, neg_emails_train, is_l2=True)
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # error_valid = y_pred[y_true == 1]
+    # error_invalid = y_pred[y_true == 0]
+    # error_valid = error_valid[error_valid.argsort()]
+    # error_invalid = error_invalid[error_invalid.argsort()]
+    #
+    # plt.close()
+    # plt.plot(error_valid)
+    # plt.savefig('../outputs/error-valid.png')
+    #
+    # plt.plot(error_invalid)
+    # plt.savefig('../outputs/error-invalid.png')
+
+    mails_grouped_by_sender = utils.group_mails_by_sender(train)
+    mails = mails_grouped_by_sender['j.kaminski@enron.com'][:100]
+    neg_mails = dal.get_negative_emails(mails, fraction=1.0)
+    y_true, y_pred = metrics_utils.get_predictions(model, w2v, mails, neg_mails, is_l2=True)
+
+    import matplotlib.pyplot as plt
+
+    error_valid = y_pred[y_true == 1]
+    error_invalid = y_pred[y_true == 0]
+    error_valid = error_valid[error_valid.argsort()]
+    error_invalid = error_invalid[error_invalid.argsort()]
+
+    plt.close()
+    plt.plot(error_valid)
+    plt.savefig('../outputs/error-valid.png')
+
+    plt.plot(error_invalid)
+    plt.savefig('../outputs/error-invalid.png')
 
     # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     #                          metrics=['hits@k', 'ap@k', 'map@k', 'ryan-hits@k'])
-    metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
+    # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
 
     print 'End of script! Time taken ' + str(time.time() - start)
