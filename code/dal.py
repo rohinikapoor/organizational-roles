@@ -74,15 +74,15 @@ def dataset_filter_by_user(data, val_split=0.0, test_split=0.3, threshold=1):
     for sender in mails_by_senders:
         mails = mails_by_senders[sender]
 
-        train_split = int((1 - val_split - test_split) * len(mails))
-        val_split = train_split + int(val_split * len(mails))
+        train_idx = int((1 - val_split - test_split) * len(mails))
+        val_idx = train_idx + int(val_split * len(mails))
 
         mails = np.array(sorted(mails, key=lambda x: x[3]))
-        train.append(mails[: train_split])
+        train.append(mails[: train_idx])
 
-        if train_split > threshold:
-            val.append(mails[train_split: val_split])
-            test.append(mails[val_split:])
+        if train_idx > threshold:
+            val.append(mails[train_idx: val_idx])
+            test.append(mails[val_idx:])
 
     return np.concatenate(train), np.concatenate(val), np.concatenate(test)
 
