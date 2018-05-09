@@ -248,15 +248,6 @@ def dominance_metric(email_ids, embs):
 
 
 if __name__ == '__main__':
-    email_ids, embs = utils.load_user_embeddings(
-        '../important_embeddings/usr100d_em200d_20ep_m3/embeddings_usr100d_em200d_20ep_m3.pkl')
-    # email_ids, embs = utils.load_user_embeddings('../important_embeddings/embeddings_discNN_test.pkl')
-    # email_ids, embs = utils.load_user_embeddings('../important_embeddings/embeddings_test2.pkl')
-    # k_fold_cross_validation(email_ids, embs)
-    # dominance_metric(email_ids, embs)
-
-
-if __name__ == '__main__':
     # email_ids, embs = utils.load_user_embeddings(
     #     '../important_embeddings/usr100d_em200d_20ep_m3/embeddings_usr100d_em200d_20ep_m3.pkl')
     # k_fold_cross_validation(email_ids, embs)
