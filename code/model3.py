@@ -61,7 +61,7 @@ class Model3(nn.Module, Model):
         email_reps = self.email_layer(h1)
         return email_reps
 
-    def train(self, emails, w2v, epochs=10, save_model=True):
+    def train(self, emails, val_data, w2v, epochs=10, save_model=True):
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
 
         for epoch in range(epochs):
