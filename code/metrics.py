@@ -158,7 +158,7 @@ def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     :param metrics: types of metrics to be calculated
     :return: None
     """
-    if model_name in ('Model1', 'Model2', 'Model2Faster', 'Model3'):
+    if model_name in ('Model1', 'Model2', 'Model3'):
         is_l2 = True
     elif model_name in ('Model4', ):
         is_l2 = False
