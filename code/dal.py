@@ -35,6 +35,7 @@ def get_emails(num_emails=100, fetch_all=False):
     if not fetch_all and len(data) > num_emails:
         data = data[:num_emails]
     print 'Data loaded'
+    # utils.plot_email_date_distribution(data)
     return np.array(data)
 
 
@@ -55,6 +56,53 @@ def get_emails_by_users(num_users=150):
     return np.array(data)
 
 
+def dataset_split(data, val_split=0.0, test_split=0.3):
+    train_split = int((1 - val_split - test_split) * len(data))
+    val_split = train_split + int(val_split * len(data))
+
+    data = np.array(sorted(data, key=lambda x: x[3]))
+    train_data = data[: train_split]
+    val_data = data[train_split: val_split]
+    test_data = data[val_split:]
+
+    return train_data, val_data, test_data
+
+
+def get_negative_emails(emails, fraction=1.0):
+    """
+    Get examples of mails not sent by sender and receiver pairs as negative examples for classification
+    :param emails:
+    :param fraction:
+    :return:
+    """
+    # TODO: Discuss the implications of using external mails instead of restricting ourselves to mails to/fro 150 core
+    # TODO: Discuss the implications of using similar recipients and number of recipients
+    print 'Generating negative examples'
+    filepath = '../data/all_emails.csv'
+    with open(filepath, 'r') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+
+    num_examples = min(int(len(emails) * fraction), len(data))
+    random_state = random.getstate()
+    random.seed(42)
+    random.shuffle(data)
+    data = data[:num_examples]
+    i = 0
+    while i < num_examples:
+        rand_idx = random.randrange(0, len(emails))
+        if data[i][0] != emails[rand_idx][0]:
+            data[i][0] = emails[rand_idx][0]
+            data[i][1] = emails[rand_idx][1]
+            # TODO: See if date is relevant
+            data[i][3] = emails[rand_idx][3]
+            i += 1
+    random.setstate(random_state)
+
+    print 'Examples created'
+    return np.array(data)
+
+
 def __filter_mails_by_users(emails, max_users):
     print 'Filtering mail by users'
     email_ids = utils.get_user_emails()
@@ -69,11 +117,11 @@ def __filter_mails_by_users(emails, max_users):
     
     # We retain only those mails that have both valid senders and atleast one valid receiver
     filtered_mails = []
-    for sender, receivers, mail in emails:
+    for sender, receivers, mail, date in emails:
         if sender in filtered_ids:
             for receiver in receivers.split('|'):
                 if receiver in filtered_ids:
-                    filtered_mails.append((sender, receivers, mail))
+                    filtered_mails.append((sender, receivers, mail, date))
                     break
 
     return filtered_mails
@@ -98,7 +146,6 @@ def load_from_db(num_emails=100, fetch_all=False):
     with open(file_path+file_name, 'wb') as f:
         writer = csv.writer(f)
         writer.writerows(data)
-
 
 
 def __get_appr_filename(num_emails, file_path):
@@ -143,26 +190,31 @@ def __clean_data_glove(data):
     st = CoreNLPTokenizer()
     clean_mail = lambda x: (' '.join(st.tokenize(x))).encode('ascii', 'ignore')
     cleaned_data = []
-    for row in data:
-        cleaned_row = list(row)
-        # replace ',' separator in receivers with '|'
-        cleaned_row[2] = cleaned_row[2].replace(',','|')
-        # convert the email body to lower case
-        cleaned_row[3] = cleaned_row[3].lower()
-        # put space after full stops since nltk can't separate those
-        cleaned_row[3] = re.sub(r'\.(?=[^ \W\d])', '. ', cleaned_row[3])
-        # use nltk stanford tokenizer to clean the email body
-        cleaned_mail_thread = clean_mail(cleaned_row[3])
-        cleaned_row[3] = __truncate_email(cleaned_mail_thread)
-        # remove the first random id column and append ot to cleaned_data
-        cleaned_data.append(cleaned_row[1:])
+    for i, row in enumerate(data):
+        if i % 1000 == 0:
+            print 100 * (i + 0.0) / len(data), '% emails processed'
+        try:
+            cleaned_row = list(row)
+            # replace ',' separator in receivers with '|'
+            cleaned_row[2] = cleaned_row[2].replace(',', '|')
+            # convert the email body to lower case
+            cleaned_row[3] = cleaned_row[3].lower()
+            # put space after full stops since nltk can't separate those
+            cleaned_row[3] = re.sub(r'\.(?=[^ \W\d])', '. ', cleaned_row[3])
+            # use nltk stanford tokenizer to clean the email body
+            cleaned_mail_thread = clean_mail(cleaned_row[3])
+            cleaned_row[3] = __truncate_email(cleaned_mail_thread)
+            # remove the first random id column and append ot to cleaned_data
+            cleaned_data.append(cleaned_row[1:])
+        except Exception as e:
+            print i, row, e
 
     return cleaned_data
 
 
 def __truncate_email(em):
     """
-    trunctates the email after first occurance of either
+    truncates the email after first occurrence of either
     1) original message
     2) forwarded by
     """
@@ -183,7 +235,11 @@ def __db_query_all(db_conn):
     :param db_conn:
     :return: tuples of tuples containing data
     """
-    query = "select message.mid, sender, group_concat(rvalue) as receivers, body from EnronAHS.message inner join EnronAHS.recipientinfo on message.mid=recipientinfo.mid group by message.mid;"
+    query = "select message.mid, sender, group_concat(rvalue) as receivers, body, message.date " \
+            "from EnronAHS.message " \
+            "inner join EnronAHS.recipientinfo " \
+            "on message.mid=recipientinfo.mid " \
+            "group by message.mid;"
     cur = db_conn.cursor()
     cur.execute("SET SESSION group_concat_max_len = 100000;")
     cur.execute(query)
@@ -196,7 +252,7 @@ def __db_query_partial(db_conn, num_emails):
     :param num_emails:
     :return tuple of tuples containing the data
     """
-    query = "select m.mid, m.sender, group_concat(rvalue) as receivers, m.body from" + \
+    query = "select m.mid, m.sender, group_concat(rvalue) as receivers, m.body, m.date from" + \
             "(select * from EnronAHS.message order by rand() limit " + str(num_emails) + \
             ")  as m inner join EnronAHS.recipientinfo on m.mid=recipientinfo.mid group by m.mid;"
     cur = db_conn.cursor()
