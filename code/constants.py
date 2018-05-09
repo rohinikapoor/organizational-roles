@@ -19,4 +19,4 @@ RUN_ID = sys.argv[1]
 MODEL_DIR = '../models/'
 
 # configure the number of hidden layers
-HIDDEN_DIMS = [256, 256]
+HIDDEN_DIMS = [256, 256, 256]

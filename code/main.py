@@ -37,7 +37,8 @@ if __name__ == '__main__':
     NUM_EMAILS = 10000
     PRE_TRAINED = False
 
-    model = locals()[model_name](pre_trained=False, load_from=None, hidden_dims=constants.HIDDEN_DIMS)
+    model = locals()[model_name](pre_trained=PRE_TRAINED, load_from='usr50d_em50d_25ep_Model2_256_256_256_model.pth',
+                                 hidden_dims=constants.HIDDEN_DIMS)
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
