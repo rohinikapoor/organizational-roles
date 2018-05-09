@@ -49,7 +49,6 @@ if __name__ == '__main__':
 
     # train, val, test = dal.dataset_split(emails, val_split=0.1, test_split=0.2)
     train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=25)
-    print train.shape, val.shape, test.shape
 
     # w2v.train(emails)
 
