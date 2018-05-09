@@ -107,6 +107,12 @@ if __name__ == '__main__':
     #                          metrics=['hits@k', 'ap@k', 'map@k', 'ryan-hits@k'])
     # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
 
+    if not os.path.exists('../outputs/{}'.format(constants.RUN_ID)):
+        os.mkdir('../outputs/{}'.format(constants.RUN_ID))
+        os.mkdir('../outputs/{}/l2-errors'.format(constants.RUN_ID))
+    elif not os.path.exists('../outputs/{}/l2-errors'.format(constants.RUN_ID)):
+        os.mkdir('../outputs/{}/l2-errors'.format(constants.RUN_ID))
+
     train_mails_grouped_by_sender = utils.group_mails_by_sender(train)
     val_mails_grouped_by_sender = utils.group_mails_by_sender(val)
     test_mails_grouped_by_sender = utils.group_mails_by_sender(test)
@@ -125,6 +131,6 @@ if __name__ == '__main__':
         # plt.hist(test_errors, histtype='step', stacked=True, fill=False, color='r')
 
         plt.title(sender)
-        plt.savefig('../outputs/l2-errors/{}.png'.format(sender))
+        plt.savefig('../outputs/{}/l2-errors/{}.png'.format(constants.RUN_ID, sender))
 
     print 'End of script! Time taken ' + str(time.time() - start)
