@@ -48,21 +48,8 @@ if __name__ == '__main__':
     print 'Number of emails returned by dal', len(emails)
 
     # train, val, test = dal.dataset_split(emails, val_split=0.1, test_split=0.2)
-    train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=0)
-    num_train, num_val, num_test = train.shape[0], val.shape[0], test.shape[0]
-    mails_grouped_by_sender = utils.group_mails_by_sender(test)
-    num_filtered_users = len(mails_grouped_by_sender.keys())
-    print train.shape, val.shape, test.shape, 'filtered users:', num_filtered_users
-    for threshold in xrange(5, 50 + 1, 5):
-        train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=threshold)
-        num_train_cur, num_val_cur, num_test_cur = train.shape[0], val.shape[0], test.shape[0]
-        emails_lost = num_train + num_val + num_test - (num_train_cur + num_val_cur + num_test_cur)
-        mails_grouped_by_sender = utils.group_mails_by_sender(test)
-        num_filtered_users_cur = len(mails_grouped_by_sender.keys())
-        users_lost = num_filtered_users - num_filtered_users_cur
-        print 'Threshold: {} Emails lost: {} Users lost: {}'.format(threshold, emails_lost, users_lost)
-
-    exit()
+    train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=25)
+    print train.shape, val.shape, test.shape
 
     # w2v.train(emails)
 
@@ -141,9 +128,6 @@ if __name__ == '__main__':
         plt.close()
         x = [train_errors, val_errors, test_errors]
         plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
-        # plt.hist(train_errors, histtype='step', stacked=True, fill=False, color='b')
-        # plt.hist(val_errors, histtype='step', stacked=True, fill=False, color='g')
-        # plt.hist(test_errors, histtype='step', stacked=True, fill=False, color='r')
 
         plt.title(sender)
         plt.savefig('../outputs/{}/l2-errors/{}.png'.format(constants.RUN_ID, sender))
