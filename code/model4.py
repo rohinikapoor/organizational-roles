@@ -26,7 +26,7 @@ class Model4(nn.Module, Model):
     We use the cross entropy loss to calculate our loss.
     """
 
-    def __init__(self, pre_trained=False, load_from=None):
+    def __init__(self, pre_trained=False, load_from=None, hidden_dims=[500]):
         # keeps track of how many times the model has seen each email_id, either as a sender or receiver
         self.emailid_train_freq = {}
         super(Model4, self).__init__()
@@ -68,7 +68,7 @@ class Model4(nn.Module, Model):
         out = self.output_layer(h1)
         return out
 
-    def train(self, emails, w2v, epochs=10, save_model=True):
+    def train(self, emails, val_data, w2v, epochs=10, save_model=True):
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
         pos_label = autograd.Variable(torch.LongTensor([1]))  # labels for correct mails
         neg_label = autograd.Variable(torch.LongTensor([0]))  # labels for incorrect mails

@@ -14,10 +14,11 @@ import utils
 from model1 import Model1
 from model3 import Model3
 from model4 import Model4
-from model2faster import Model2Faster
+from model2 import Model2
+from model2deeper import Model2Deeper
+from model3deeper import Model3Deeper
 from w2v_custom import W2VCustom
 from w2v_glove import W2VGlove
-
 
 if __name__ == '__main__':
     # TODO: Consider moving parameters and hyperparameters into another file?
@@ -36,7 +37,8 @@ if __name__ == '__main__':
     NUM_EMAILS = 10000
     PRE_TRAINED = False
 
-    model = locals()[model_name](pre_trained=PRE_TRAINED, load_from='{}_model.pth'.format(constants.RUN_ID))
+    model = locals()[model_name](pre_trained=PRE_TRAINED, load_from='usr50d_em50d_25ep_Model2_256_256_256_model.pth',
+                                 hidden_dims=constants.HIDDEN_DIMS)
     # w2v = W2VCustom()
     w2v = W2VGlove()
 
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     # print 'time taken = ', (end-start)
 
     if not PRE_TRAINED:
-        model.train(train, w2v, num_epochs)
+        model.train(train, val, w2v, num_epochs)
 
     neg_emails = dal.get_negative_emails(test, fraction=1.0)
     print 'Number of negative emails returned by dal', len(neg_emails)
