@@ -104,7 +104,7 @@ def get_negative_emails(emails, fraction=1.0):
 
     num_examples = min(int(len(emails) * fraction), len(data))
     random_state = random.getstate()
-    random.seed(47)
+    random.seed(42)
     random.shuffle(data)
     data = data[:num_examples]
     i = 0
