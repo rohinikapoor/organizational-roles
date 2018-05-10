@@ -25,5 +25,32 @@ Threshold: 35 Emails lost: 439 Users lost: 64
 Threshold: 40 Emails lost: 491 Users lost: 67
 Threshold: 45 Emails lost: 549 Users lost: 70
 Threshold: 50 Emails lost: 570 Users lost: 71
+"""
 
+"""
+import matplotlib.pyplot as plt
+import os
+
+if not os.path.exists('../outputs/{}'.format(constants.RUN_ID)):
+    os.mkdir('../outputs/{}'.format(constants.RUN_ID))
+    os.mkdir('../outputs/{}/l2-errors'.format(constants.RUN_ID))
+elif not os.path.exists('../outputs/{}/l2-errors'.format(constants.RUN_ID)):
+    os.mkdir('../outputs/{}/l2-errors'.format(constants.RUN_ID))
+
+train_mails_grouped_by_sender = utils.group_mails_by_sender(train)
+val_mails_grouped_by_sender = utils.group_mails_by_sender(val)
+test_mails_grouped_by_sender = utils.group_mails_by_sender(test)
+for sender in val_mails_grouped_by_sender:
+    _, train_errors = metrics_utils.get_predictions(model, w2v, train_mails_grouped_by_sender[sender],
+                                                    neg_emails=[], is_l2=True)
+    _, val_errors = metrics_utils.get_predictions(model, w2v, val_mails_grouped_by_sender[sender],
+                                                  neg_emails=[], is_l2=True)
+    _, test_errors = metrics_utils.get_predictions(model, w2v, test_mails_grouped_by_sender[sender],
+                                                   neg_emails=[], is_l2=True)
+    plt.close()
+    x = [train_errors, val_errors, test_errors]
+    plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
+
+    plt.title(sender)
+    plt.savefig('../outputs/{}/l2-errors/{}.png'.format(constants.RUN_ID, sender))
 """

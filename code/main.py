@@ -64,71 +64,11 @@ if __name__ == '__main__':
     if not PRE_TRAINED:
         model.train(train, w2v, num_epochs)
 
-    # neg_emails = dal.get_negative_emails(test, fraction=1.0)
-    # print 'Number of negative emails returned by dal', len(neg_emails)
-
-    # neg_emails_train = dal.get_negative_emails(train, fraction=1.0)
-    # y_true, y_pred = metrics_utils.get_predictions(model, w2v, train, neg_emails_train, is_l2=True)
-    #
-    # import matplotlib.pyplot as plt
-    #
-    # error_valid = y_pred[y_true == 1]
-    # error_invalid = y_pred[y_true == 0]
-    # error_valid = error_valid[error_valid.argsort()]
-    # error_invalid = error_invalid[error_invalid.argsort()]
-    #
-    # plt.close()
-    # plt.plot(error_valid)
-    # plt.savefig('../outputs/error-valid.png')
-    #
-    # plt.plot(error_invalid)
-    # plt.savefig('../outputs/error-invalid.png')
-
-    # mails_grouped_by_sender = utils.group_mails_by_sender(train)
-    # mails = mails_grouped_by_sender['j.kaminski@enron.com'][:100]
-    # neg_mails = dal.get_negative_emails(mails, fraction=1.0)
-    # y_true, y_pred = metrics_utils.get_predictions(model, w2v, mails, neg_mails, is_l2=True)
-    #
-    import matplotlib.pyplot as plt
-    #
-    # error_valid = y_pred[y_true == 1]
-    # error_invalid = y_pred[y_true == 0]
-    # error_valid = error_valid[error_valid.argsort()]
-    # error_invalid = error_invalid[error_invalid.argsort()]
-    #
-    # plt.close()
-    # plt.plot(error_valid)
-    # plt.savefig('../outputs/error-valid.png')
-    #
-    # plt.close()
-    # plt.plot(error_invalid)
-    # plt.savefig('../outputs/error-invalid.png')
+    neg_emails = dal.get_negative_emails(test, fraction=1.0)
+    print 'Number of negative emails returned by dal', len(neg_emails)
 
     # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     #                          metrics=['hits@k', 'ap@k', 'map@k', 'ryan-hits@k'])
-    # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
-
-    if not os.path.exists('../outputs/{}'.format(constants.RUN_ID)):
-        os.mkdir('../outputs/{}'.format(constants.RUN_ID))
-        os.mkdir('../outputs/{}/l2-errors'.format(constants.RUN_ID))
-    elif not os.path.exists('../outputs/{}/l2-errors'.format(constants.RUN_ID)):
-        os.mkdir('../outputs/{}/l2-errors'.format(constants.RUN_ID))
-
-    train_mails_grouped_by_sender = utils.group_mails_by_sender(train)
-    val_mails_grouped_by_sender = utils.group_mails_by_sender(val)
-    test_mails_grouped_by_sender = utils.group_mails_by_sender(test)
-    for sender in val_mails_grouped_by_sender:
-        _, train_errors = metrics_utils.get_predictions(model, w2v, train_mails_grouped_by_sender[sender],
-                                                        neg_emails=[], is_l2=True)
-        _, val_errors = metrics_utils.get_predictions(model, w2v, val_mails_grouped_by_sender[sender],
-                                                      neg_emails=[], is_l2=True)
-        _, test_errors = metrics_utils.get_predictions(model, w2v, test_mails_grouped_by_sender[sender],
-                                                       neg_emails=[], is_l2=True)
-        plt.close()
-        x = [train_errors, val_errors, test_errors]
-        plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
-
-        plt.title(sender)
-        plt.savefig('../outputs/{}/l2-errors/{}.png'.format(constants.RUN_ID, sender))
+    metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
 
     print 'End of script! Time taken ' + str(time.time() - start)
