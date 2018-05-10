@@ -11,6 +11,7 @@ import constants
 import metrics_utils
 
 from datetime import datetime
+from scipy import stats
 from sklearn.manifold import TSNE
 
 
@@ -120,6 +121,12 @@ def plot_error_distribution(sender, train_errors, val_errors, test_errors):
     plt.close()
     x = [train_errors, val_errors, test_errors]
     plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
+
+    h = np.arange(np.min(train_errors), np.max(train_errors), 0.005)
+    mean = np.mean(train_errors)
+    std = np.std(train_errors)
+    pdf = len(train_errors) * stats.norm.pdf(h, mean, std) / np.max(stats.norm.pdf(h, mean, std))
+    plt.plot(h, pdf)
 
     plt.title(sender)
     plt.savefig('../outputs/{}-l2-errors-{}.png'.format(constants.RUN_ID, sender))
