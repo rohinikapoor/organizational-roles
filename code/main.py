@@ -46,8 +46,8 @@ if __name__ == '__main__':
     emails = dal.get_emails_by_users(num_users=num_users)
     print 'Number of emails returned by dal', len(emails)
 
-    train, val, test = dal.dataset_split(emails, val_split=0.1, test_split=0.2)
-    # train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=25)
+    # train, val, test = dal.dataset_split(emails, val_split=0.1, test_split=0.2)
+    train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=25)
 
     # w2v.train(emails)
 
@@ -83,8 +83,8 @@ if __name__ == '__main__':
 
     metrics.test_error_deviation_thresholds(distributions)
 
-    # for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
-    #     plots.plot_error_distribution(model, w2v, sender, tr[sender], va[sender], te[sender])
+    for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
+        plots.plot_error_distribution(model, w2v, sender, tr[sender], va[sender], te[sender])
 
     # neg_emails = dal.get_negative_emails(test, fraction=1.0)
     # print 'Number of negative emails returned by dal', len(neg_emails)
