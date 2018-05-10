@@ -39,7 +39,7 @@ def get_error_distributions(model, w2v, emails):
         mu, std = norm.fit(errors)
 
         distributions[sender]['mails'] = mails
-        distributions[sender]['errors'] = errors
+        distributions[sender]['train_errors'] = errors
         distributions[sender]['mu'] = mu
         distributions[sender]['std'] = std
 

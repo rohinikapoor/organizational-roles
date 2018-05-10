@@ -64,7 +64,6 @@ if __name__ == '__main__':
         model.train(train, w2v, num_epochs)
 
     distributions = metrics_utils.get_error_distributions(model, w2v, train)
-    metrics.test_error_deviation_thresholds(distributions)
 
     tr = utils.group_mails_by_sender(train)
     va = utils.group_mails_by_sender(val)
@@ -72,8 +71,20 @@ if __name__ == '__main__':
     names = [x for x in te if x in va and x in tr]
     print names
 
-    for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
-        plots.plot_error_distribution(model, w2v, sender, tr[sender], va[sender], te[sender])
+    for sender in distributions:
+        if sender not in names:
+            distributions[sender] = None
+        else:
+            _, val_errors = metrics_utils.get_predictions(model, w2v, va[sender], neg_emails=[], is_l2=True)
+            _, test_errors = metrics_utils.get_predictions(model, w2v, te[sender], neg_emails=[], is_l2=True)
+            distributions[sender]['val_errors'] = val_errors
+            distributions[sender]['test_errors'] = val_errors
+    distributions = {key: value for key, value in distributions.items() if not value is None}
+
+    metrics.test_error_deviation_thresholds(distributions)
+
+    # for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
+    #     plots.plot_error_distribution(model, w2v, sender, tr[sender], va[sender], te[sender])
 
     # neg_emails = dal.get_negative_emails(test, fraction=1.0)
     # print 'Number of negative emails returned by dal', len(neg_emails)
