@@ -8,6 +8,7 @@ import seaborn as sb
 import time
 
 import constants
+import metrics_utils
 
 from datetime import datetime
 from sklearn.manifold import TSNE
@@ -113,6 +114,18 @@ def plot_email_date_distribution(email_data):
     plt.plot()
     plt.plot_date(dates, np.arange(0.0, len(dates)) / len(dates), '--')
     plt.savefig('../outputs/email-date-distribution.png', bbox_inches='tight')
+
+
+def plot_error_distribution(model, w2v, sender, train, val, test):
+    _, train_errors = metrics_utils.get_predictions(model, w2v, train, neg_emails=[], is_l2=True)
+    _, val_errors = metrics_utils.get_predictions(model, w2v, val, neg_emails=[], is_l2=True)
+    _, test_errors = metrics_utils.get_predictions(model, w2v, test, neg_emails=[], is_l2=True)
+    plt.close()
+    x = [train_errors, val_errors, test_errors]
+    plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
+
+    plt.title(sender)
+    plt.savefig('../outputs/{}-l2-errors-{}.png'.format(constants.RUN_ID, sender))
 
 
 # The following code was used to generate charts for the poster

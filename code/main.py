@@ -3,8 +3,6 @@ This script orchestrates the entire model's lifecycle via a single pipeline
 Multiple flags can be used to enable and disable certain sections of the pipeline
 """
 
-import numpy as np
-import os
 import sys
 import time
 
@@ -12,6 +10,7 @@ import constants
 import dal
 import metrics
 import metrics_utils
+import plots
 import utils
 
 from model1 import Model1
@@ -47,8 +46,8 @@ if __name__ == '__main__':
     emails = dal.get_emails_by_users(num_users=num_users)
     print 'Number of emails returned by dal', len(emails)
 
-    # train, val, test = dal.dataset_split(emails, val_split=0.1, test_split=0.2)
-    train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=25)
+    train, val, test = dal.dataset_split(emails, val_split=0.1, test_split=0.2)
+    # train, val, test = dal.dataset_filter_by_user(emails, val_split=0.1, test_split=0.2, threshold=25)
 
     # w2v.train(emails)
 
@@ -64,11 +63,23 @@ if __name__ == '__main__':
     if not PRE_TRAINED:
         model.train(train, w2v, num_epochs)
 
-    neg_emails = dal.get_negative_emails(test, fraction=1.0)
-    print 'Number of negative emails returned by dal', len(neg_emails)
+    distributions = metrics_utils.get_error_distributions(model, w2v, train)
+    metrics.test_error_deviation_thresholds(distributions)
+
+    tr = utils.group_mails_by_sender(train)
+    va = utils.group_mails_by_sender(val)
+    te = utils.group_mails_by_sender(test)
+    names = [x for x in te if x in va and x in tr]
+    print names
+
+    for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
+        plots.plot_error_distribution(model, w2v, sender, tr[sender], va[sender], te[sender])
+
+    # neg_emails = dal.get_negative_emails(test, fraction=1.0)
+    # print 'Number of negative emails returned by dal', len(neg_emails)
 
     # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     #                          metrics=['hits@k', 'ap@k', 'map@k', 'ryan-hits@k'])
-    metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
+    # metrics.evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000, metrics=['hits@k', 'ap@k'])
 
     print 'End of script! Time taken ' + str(time.time() - start)
