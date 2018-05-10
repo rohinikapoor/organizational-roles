@@ -116,16 +116,20 @@ def plot_email_date_distribution(email_data):
     plt.savefig('../outputs/email-date-distribution.png', bbox_inches='tight')
 
 
-def plot_error_distribution(model, w2v, sender, train, val, test):
-    _, train_errors = metrics_utils.get_predictions(model, w2v, train, neg_emails=[], is_l2=True)
-    _, val_errors = metrics_utils.get_predictions(model, w2v, val, neg_emails=[], is_l2=True)
-    _, test_errors = metrics_utils.get_predictions(model, w2v, test, neg_emails=[], is_l2=True)
+def plot_error_distribution(sender, train_errors, val_errors, test_errors):
     plt.close()
     x = [train_errors, val_errors, test_errors]
     plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
 
     plt.title(sender)
     plt.savefig('../outputs/{}-l2-errors-{}.png'.format(constants.RUN_ID, sender))
+
+
+def plot_error_distribution_v2(model, w2v, sender, train, val, test):
+    _, train_errors = metrics_utils.get_predictions(model, w2v, train, neg_emails=[], is_l2=True)
+    _, val_errors = metrics_utils.get_predictions(model, w2v, val, neg_emails=[], is_l2=True)
+    _, test_errors = metrics_utils.get_predictions(model, w2v, test, neg_emails=[], is_l2=True)
+    plot_error_distribution(sender, train_errors, val_errors, test_errors)
 
 
 # The following code was used to generate charts for the poster

@@ -84,7 +84,9 @@ if __name__ == '__main__':
     metrics.test_error_deviation_thresholds(distributions)
 
     for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
-        plots.plot_error_distribution(model, w2v, sender, tr[sender], va[sender], te[sender])
+        # plots.plot_error_distribution_v2(model, w2v, sender, tr[sender], va[sender], te[sender])
+        plots.plot_error_distribution(sender, distributions[sender]['train_errors'],
+                                      distributions[sender]['val_errors'], distributions[sender]['test_errors'])
 
     # neg_emails = dal.get_negative_emails(test, fraction=1.0)
     # print 'Number of negative emails returned by dal', len(neg_emails)
