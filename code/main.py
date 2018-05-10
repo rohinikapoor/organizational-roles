@@ -3,6 +3,8 @@ This script orchestrates the entire model's lifecycle via a single pipeline
 Multiple flags can be used to enable and disable certain sections of the pipeline
 """
 
+import numpy as np
+import pickle
 import sys
 import time
 
@@ -63,23 +65,26 @@ if __name__ == '__main__':
     if not PRE_TRAINED:
         model.train(train, w2v, num_epochs)
 
-    distributions = metrics_utils.get_error_distributions(model, w2v, train)
+    if PRE_TRAINED:
+        distributions = pickle.load(open('../outputs/{}-distributions.pkl'.format(constants.RUN_ID), 'rb'))
+    else:
+        distributions = metrics_utils.get_error_distributions(model, w2v, train)
+        tr = utils.group_mails_by_sender(train)
+        va = utils.group_mails_by_sender(val)
+        te = utils.group_mails_by_sender(test)
+        names = [x for x in te if x in va and x in tr]
+        print names
 
-    tr = utils.group_mails_by_sender(train)
-    va = utils.group_mails_by_sender(val)
-    te = utils.group_mails_by_sender(test)
-    names = [x for x in te if x in va and x in tr]
-    print names
-
-    for sender in distributions:
-        if sender not in names:
-            distributions[sender] = None
-        else:
-            _, val_errors = metrics_utils.get_predictions(model, w2v, va[sender], neg_emails=[], is_l2=True)
-            _, test_errors = metrics_utils.get_predictions(model, w2v, te[sender], neg_emails=[], is_l2=True)
-            distributions[sender]['val_errors'] = val_errors
-            distributions[sender]['test_errors'] = val_errors
-    distributions = {key: value for key, value in distributions.items() if not value is None}
+        for sender in distributions:
+            if sender not in names:
+                distributions[sender] = None
+            else:
+                _, val_errors = metrics_utils.get_predictions(model, w2v, va[sender], neg_emails=[], is_l2=True)
+                _, test_errors = metrics_utils.get_predictions(model, w2v, te[sender], neg_emails=[], is_l2=True)
+                distributions[sender]['val_errors'] = val_errors
+                distributions[sender]['test_errors'] = val_errors
+        distributions = {key: value for key, value in distributions.items() if not value is None}
+        pickle.dump(distributions, open('../outputs/{}-distributions.pkl'.format(constants.RUN_ID), 'wb'))
 
     metrics.test_error_deviation_thresholds(distributions)
 
