@@ -120,13 +120,14 @@ def plot_email_date_distribution(email_data):
 def plot_error_distribution(sender, train_errors, val_errors, test_errors):
     plt.close()
     x = [train_errors, val_errors, test_errors]
-    plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'])
+    ret = plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'], label=['train', 'validation', 'test'])
 
     h = np.arange(np.min(train_errors), np.max(train_errors), 0.005)
     mean = np.mean(train_errors)
     std = np.std(train_errors)
-    pdf = len(train_errors) * stats.norm.pdf(h, mean, std) / np.max(stats.norm.pdf(h, mean, std))
+    pdf = np.max(ret[0]) * stats.norm.pdf(h, mean, std) / np.max(stats.norm.pdf(h, mean, std))
     plt.plot(h, pdf)
+    plt.legend()
 
     plt.title(sender)
     plt.savefig('../outputs/{}-l2-errors-{}.png'.format(constants.RUN_ID, sender))
@@ -137,6 +138,28 @@ def plot_error_distribution_v2(model, w2v, sender, train, val, test):
     _, val_errors = metrics_utils.get_predictions(model, w2v, val, neg_emails=[], is_l2=True)
     _, test_errors = metrics_utils.get_predictions(model, w2v, test, neg_emails=[], is_l2=True)
     plot_error_distribution(sender, train_errors, val_errors, test_errors)
+
+
+def plot_special_mails(sender, distributions, special_emails, special_errors):
+    colors = {'spam': 'b', 'targeted': 'r', 'broadcast': 'g'}
+    markers = {'spam': 'o', 'targeted': '^', 'broadcast': 'D'}
+
+    plt.close()
+    train_errors = distributions[sender]['train_errors']
+    x = np.arange(np.min(train_errors), np.max(train_errors) + 0.1,  0.005)
+
+    mean = distributions[sender]['mu']
+    std = distributions[sender]['std']
+    pdf = stats.norm.pdf(x, mean, std) / np.max(stats.norm.pdf(x, mean, std))
+
+    plt.plot(x, pdf)
+    for category in colors:
+        errors = special_errors[np.nonzero(special_emails[:, 3] == category)]
+        plt.scatter(errors, np.zeros(errors.shape), marker=markers[category], c=colors[category], label=category)
+    plt.legend()
+
+    plt.title(sender)
+    plt.savefig('../outputs/{}-special-mails-{}.png'.format(constants.RUN_ID, sender))
 
 
 # The following code was used to generate charts for the poster

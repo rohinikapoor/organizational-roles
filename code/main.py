@@ -88,10 +88,20 @@ if __name__ == '__main__':
 
     metrics.test_error_deviation_thresholds(distributions)
 
+    # This will be a little different when compared to the other mails
+    # The last column is describes the type of email instead of containing the date
+    # special_emails = dal.get_emails_for_anomaly_testing()
+    # special_emails_by_sender = utils.group_mails_by_sender(special_emails)
+
+    # for sender in ['kimberly.watson@enron.com']:
     for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
         # plots.plot_error_distribution_v2(model, w2v, sender, tr[sender], va[sender], te[sender])
         plots.plot_error_distribution(sender, distributions[sender]['train_errors'],
                                       distributions[sender]['val_errors'], distributions[sender]['test_errors'])
+
+        # _, special_errors = metrics_utils.get_predictions(model, w2v, special_emails_by_sender[sender],
+        #                                                   neg_emails=[], is_l2=True)
+        # plots.plot_special_mails(sender, distributions, special_emails_by_sender[sender], special_errors)
 
     # neg_emails = dal.get_negative_emails(test, fraction=1.0)
     # print 'Number of negative emails returned by dal', len(neg_emails)
