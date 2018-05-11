@@ -53,9 +53,9 @@ if __name__ == '__main__':
 
     # w2v.train(emails)
 
-    email_body = emails[0][2]
-    sentence = w2v.get_sentence(email_body)
-    print sentence[0].shape
+    # email_body = emails[0][2]
+    # sentence = w2v.get_sentence(email_body)
+    # print sentence[0].shape
 
     # start = time.time()
     # utils.get_nearest_neighbors_emails(emails, w2v, 5)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         distributions = {key: value for key, value in distributions.items() if not value is None}
         pickle.dump(distributions, open('../outputs/{}-distributions.pkl'.format(constants.RUN_ID), 'wb'))
 
-    metrics.test_error_deviation_thresholds(distributions)
+    # metrics.test_error_deviation_thresholds(distributions)
 
     # This will be a little different when compared to the other mails
     # The last column is describes the type of email instead of containing the date
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     special_emails_by_sender = utils.group_mails_by_sender(special_emails)
 
     # for sender in ['kimberly.watson@enron.com']:
-    for sender in ['lynn.blair@enron.com', 'carol.clair@enron.com']:
+    for sender in ['carol.clair@enron.com', 'lynn.blair@enron.com']:
         # plots.plot_error_distribution_v2(model, w2v, sender, tr[sender], va[sender], te[sender])
         plots.plot_error_distribution(sender, distributions[sender]['train_errors'],
                                       distributions[sender]['val_errors'], distributions[sender]['test_errors'])
