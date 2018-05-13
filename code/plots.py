@@ -1,6 +1,6 @@
 import matplotlib as mpl;
 
-# mpl.use('Agg')  # The cluster cannot process other graphic engines
+mpl.use('Agg')  # The cluster cannot process other graphic engines
 import matplotlib.pyplot as plt
 import mpld3
 import numpy as np
