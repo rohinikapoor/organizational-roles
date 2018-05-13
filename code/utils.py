@@ -295,3 +295,17 @@ def get_emailid_freq():
     with open('../resources/emailid_mailfreq.pkl', 'rb') as f:
         em_freq = pickle.load(f)
     return em_freq
+
+
+def threshold_result_parser(filename):
+    with open(filename) as f:
+        content = f.readlines()
+    val_acc = []
+    train_acc = []
+    for line in content:
+        words = line.split()
+        if len(words) > 6 and words[1] == 'val':
+            val_acc.append(float(words[7]))
+        if len(words) > 6 and words[1] == 'train':
+            train_acc.append(float(words[7]))
+    return np.array(train_acc), np.array(val_acc)

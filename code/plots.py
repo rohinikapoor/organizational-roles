@@ -8,6 +8,7 @@ import seaborn as sb
 import time
 
 import constants
+import utils
 
 from datetime import datetime
 from sklearn.manifold import TSNE
@@ -176,17 +177,33 @@ def plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False):
         outfile = '../outputs/' + title + '.png'
         plt.savefig(outfile)
 
+def plot_thresholds(thr, train, val, title, filename):
+    plt.plot(thr, train, label = 'train acc', linewidth=2)
+    plt.plot(thr, val, label = 'validation acc', linewidth=2)
+    plt.legend(loc='lower right')
+    plt.xlabel('Threshold value')
+    plt.ylabel('Accuracy')
+    plt.title(title)
+    outfile = '../outputs/' + filename + '.png'
+    plt.savefig(outfile)
+    # plt.show()
+
 
 if __name__ == '__main__':
-    labels = ['SR Model', 'PV Model', 'Discriminative']
-    ymax = 1.0
+    x = np.arange(0.1, 3.1, 0.1)
+    train, val = utils.threshold_result_parser('../resources/model3_25ep.txt')
+    plot_thresholds(x, train, val, title='Threshold experiments for SR Model', filename='model3_threshold')
 
-    title = 'Hits @ 1000'
-    vals = np.array([[0.57, 0.38],
-                     [0.74, 0.50],
-                     [0.529, 0.514]])
-    ylabel = 'Hit ratio'
-    plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
+
+    # labels = ['SR Model', 'PV Model', 'Discriminative']
+    # ymax = 1.0
+    #
+    # title = 'Hits @ 1000'
+    # vals = np.array([[0.57, 0.38],
+    #                  [0.74, 0.50],
+    #                  [0.529, 0.514]])
+    # ylabel = 'Hit ratio'
+    # plot_bar_charts_v2(labels, vals, ylabel, title, ymax, display_plot=False)
 
     # labels = ['SR Model', 'PV Model', 'Discriminative']
     # vals = [60.47, 48.60, 54.94]
