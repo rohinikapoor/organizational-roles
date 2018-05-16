@@ -146,6 +146,29 @@ def _rank_senders_by_emails(model, w2v, emails, k=10, is_l2=True):
     return num_hits, num_total, num_hits / num_total, np.array(hit_positions)
 
 
+def test_error_deviation_thresholds(distributions):
+    categories = ['train', 'val', 'test']
+    for threshold in np.arange(0.1, 3.1, 0.1):
+        total = {x: 0.0 for x in categories}
+        total_correct = {x: 0.0 for x in categories}
+        accuracies = {x: list() for x in categories}
+        for sender in distributions:
+            mu = distributions[sender]['mu']
+            std = distributions[sender]['std']
+            for category in categories:
+                errors = distributions[sender]['{}_errors'.format(category)]
+                correct = np.sum(np.abs(errors - mu + 1e-5) / (std + 1e-5) <= threshold)
+                accuracies[category].append((correct + 0.0) / len(errors))
+                total_correct[category] += correct
+                total[category] += len(errors)
+
+        print 'Threshold: {}'.format(threshold)
+        for category in categories:
+            print 'Category: {} Total Accuracy: {} Average Accuracy: {}'\
+                .format(category, total_correct[category] / total[category], np.mean(accuracies[category]))
+        print
+
+
 def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
                      metrics=('hits@k', 'ap@k', 'map@k', 'ryan-hits@k')):
     """

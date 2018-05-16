@@ -1,4 +1,4 @@
-import matplotlib as mpl;
+import matplotlib as mpl
 
 mpl.use('Agg')  # The cluster cannot process other graphic engines
 import matplotlib.pyplot as plt
@@ -8,9 +8,11 @@ import seaborn as sb
 import time
 
 import constants
+import metrics_utils
 import utils
 
 from datetime import datetime
+from scipy import stats
 from sklearn.manifold import TSNE
 
 
@@ -116,6 +118,51 @@ def plot_email_date_distribution(email_data):
     plt.savefig('../outputs/email-date-distribution.png', bbox_inches='tight')
 
 
+def plot_error_distribution(sender, train_errors, val_errors, test_errors):
+    plt.close()
+    x = [train_errors, val_errors, test_errors]
+    ret = plt.hist(x, 10, histtype='bar', color=['b', 'g', 'r'], label=['train', 'validation', 'test'])
+
+    h = np.arange(np.min(train_errors), np.max(train_errors), 0.005)
+    mean = np.mean(train_errors)
+    std = np.std(train_errors)
+    pdf = np.max(ret[0]) * stats.norm.pdf(h, mean, std) / np.max(stats.norm.pdf(h, mean, std))
+    plt.plot(h, pdf)
+    plt.legend()
+
+    plt.title(sender)
+    plt.savefig('../outputs/{}-l2-errors-{}.png'.format(constants.RUN_ID, sender))
+
+
+def plot_error_distribution_v2(model, w2v, sender, train, val, test):
+    _, train_errors = metrics_utils.get_predictions(model, w2v, train, neg_emails=[], is_l2=True)
+    _, val_errors = metrics_utils.get_predictions(model, w2v, val, neg_emails=[], is_l2=True)
+    _, test_errors = metrics_utils.get_predictions(model, w2v, test, neg_emails=[], is_l2=True)
+    plot_error_distribution(sender, train_errors, val_errors, test_errors)
+
+
+def plot_special_mails(sender, distributions, special_emails, special_errors):
+    colors = {'spam': 'b', 'targeted': 'r', 'broadcast': 'g'}
+    markers = {'spam': 'o', 'targeted': '^', 'broadcast': 'D'}
+
+    plt.close()
+    train_errors = distributions[sender]['train_errors']
+    x = np.arange(np.min(train_errors), np.max(train_errors) + 0.1,  0.005)
+
+    mean = distributions[sender]['mu']
+    std = distributions[sender]['std']
+    pdf = stats.norm.pdf(x, mean, std) / np.max(stats.norm.pdf(x, mean, std))
+
+    plt.plot(x, pdf)
+    for category in colors:
+        errors = special_errors[np.nonzero(special_emails[:, 3] == category)]
+        plt.scatter(errors, np.zeros(errors.shape), marker=markers[category], c=colors[category], label=category)
+    plt.legend()
+
+    plt.title(sender)
+    plt.savefig('../outputs/{}-special-mails-{}.png'.format(constants.RUN_ID, sender))
+
+
 # The following code was used to generate charts for the poster
 def plot_bar_charts(labels, vals, ylabel, title, ymax, baseline=None, display_plot=False):
     # objects = ('CEO/Presidents', 'Employees', 'Directors', 'Managers', 'Others')
@@ -193,7 +240,6 @@ if __name__ == '__main__':
     x = np.arange(0.1, 3.1, 0.1)
     train, val = utils.threshold_result_parser('../resources/model3_25ep.txt')
     plot_thresholds(x, train, val, title='Threshold experiments for SR Model', filename='model3_threshold')
-
 
     # labels = ['SR Model', 'PV Model', 'Discriminative']
     # ymax = 1.0

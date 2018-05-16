@@ -56,6 +56,16 @@ def get_emails_by_users(num_users=150):
     return np.array(data)
 
 
+def get_emails_for_anomaly_testing():
+    print 'Loading mails for testing anomaly detection'
+    filepath = '../data/tests.csv'
+    with open(filepath, 'r') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+        data = __clean_data_glove(data)
+    return np.array(data)
+
+
 def dataset_split(data, val_split=0.0, test_split=0.3):
     train_split = int((1 - val_split - test_split) * len(data))
     val_split = train_split + int(val_split * len(data))
