@@ -181,7 +181,8 @@ def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     :param metrics: types of metrics to be calculated
     :return: None
     """
-    if model_name in ('Model1', 'Model2', 'Model2Faster', 'Model3'):
+    results = {}
+    if model_name in ('Model1', 'Model2', 'Model3', 'Model2Deeper', 'Model3Deeper'):
         is_l2 = True
     elif model_name in ('Model4', ):
         is_l2 = False
@@ -191,9 +192,13 @@ def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     y_true, y_pred = metrics_utils.get_predictions(model, w2v, test, neg_emails, is_l2)
 
     if 'hits@k' in metrics:
-        print 'Hits@{}'.format(k), hits_at_k(y_true, y_pred, k=k, is_l2=is_l2)
+        hits_pos, k_pos, hits_neg, k_neg = hits_at_k(y_true, y_pred, k=k, is_l2=is_l2)
+        results['hits@k'] = (hits_pos, k_pos, hits_neg, k_neg)
+        print 'Hits@{}'.format(k), results['hits@k']
     if 'ap@k' in metrics:
-        print 'AP@{}'.format(k), average_precision_at_k(y_true, y_pred, k=k, is_l2=is_l2)
+        ap_pos, k_pos, ap_neg, k_neg = average_precision_at_k(y_true, y_pred, k=k, is_l2=is_l2)
+        results['ap@k'] = (ap_pos, k_pos, ap_neg, k_neg)
+        print 'AP@{}'.format(k), results['ap@k']
     if 'map@k' in metrics:
         mails_grouped_by_sender = utils.group_mails_by_sender(test)
         y_true_all, y_pred_all = [], []
@@ -206,6 +211,7 @@ def evaluate_metrics(model, model_name, w2v, test, neg_emails, k=1000,
     if 'ryan-hits@k' in metrics:
         num_hits, num_total, h_by_t, hit_positions = _rank_senders_by_emails(model, w2v, test, k=10, is_l2=is_l2)
         print 'Rank senders by emails:', stats(hit_positions, k_values=[5, 10, 20, 30])
+    return results
 
 
 def k_fold_cross_validation(email_ids, embs):

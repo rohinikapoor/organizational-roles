@@ -8,11 +8,13 @@ import torch.optim as optim
 import constants
 import plots
 import utils
+import dal
+import metrics
 
 from model import Model
 
 
-class Model3(nn.Module, Model):
+class Model3Deeper(nn.Module, Model):
     """
     Contains the code for Model3.
     Architecture - sr_embedding -> linear_layer -> relu_activation -> linear_layer -> predicted_email_emb -> loss
@@ -22,19 +24,20 @@ class Model3(nn.Module, Model):
      representation is obtained by averaging embeddings from pre-trained word2vec model
     """
 
-    def __init__(self, pre_trained=False, load_from=None, hidden_dims=[500]):
+    def __init__(self, pre_trained=False, load_from=None, hidden_dims=[500], use_batchnorm=False):
+        self.val_after_epoch = 1
+        self.best_val = 0.0
         # keeps track of how many times the model has seen each email_id, either as a sender or receiver
         self.emailid_train_freq = {}
-        super(Model3, self).__init__()
+        super(Model3Deeper, self).__init__()
         # embedding lookup for 150 users each have constants.USER_EMB_SIZE dimension representation
         self.embedding_layer = nn.Embedding(150, constants.USER_EMB_SIZE)
         # first hidden layer, linear layer with weights 2*constants.USER_EMB_SIZEx500
         # this should be the size of <sender+receiver representation>
-        self.h1_layer = nn.Linear(2*constants.USER_EMB_SIZE, 500)
-        # ReLU activation used
-        self.relu = nn.ReLU()
+        inp_dim = 2 * constants.USER_EMB_SIZE
+        self.hidden_layers, out_dim = self.create_hidden_layers(inp_dim, hidden_dims, use_batchnorm)
         # final linear layer that outputs the predicted email representation
-        self.email_layer = nn.Linear(500, constants.EMAIL_EMB_SIZE)
+        self.email_layer = nn.Linear(out_dim, constants.EMAIL_EMB_SIZE)
         if pre_trained:
             self.load(load_from)
 
@@ -48,7 +51,6 @@ class Model3(nn.Module, Model):
         :param r_id
         :return: email representation
         """
-        # convert integers to long tensors
         s_id = autograd.Variable(torch.LongTensor([s_id]))
         r_ids = autograd.Variable(torch.LongTensor(r_ids))
         # extract the embedding for all the receivers and take an average
@@ -57,11 +59,12 @@ class Model3(nn.Module, Model):
         s_emb = self.embedding_layer(s_id)
         # simple concatenation of sender and receiver embedding
         sr_emb = torch.cat((s_emb, r_emb), 1)
-        h1 = self.relu(self.h1_layer(sr_emb))
-        email_reps = self.email_layer(h1)
+        hidden_out = self.hidden_layers(sr_emb)
+        email_reps = self.email_layer(hidden_out)
         return email_reps
 
     def train(self, emails, val_data, w2v, epochs=10, save_model=True):
+        neg_val_data = dal.get_negative_emails(val_data, fraction=1.0)
         optimizer = optim.RMSprop(self.parameters(), lr=0.001, alpha=0.99, momentum=0.0)
 
         for epoch in range(epochs):
@@ -77,8 +80,9 @@ class Model3(nn.Module, Model):
                     optimizer.step()
                     epoch_loss += loss.data.numpy()
             end = time.time()
-            print 'time taken for epoch : ', (end-start)
+            print 'time taken for epoch : ', (end - start)
             print 'loss in epoch ' + str(epoch) + ' = ' + str(epoch_loss)
+            self.run_validation(epoch, val_data, neg_val_data, w2v)
 
         if save_model:
             file_name = constants.RUN_ID + '_model.pth'
@@ -87,6 +91,23 @@ class Model3(nn.Module, Model):
         utils.save_user_embeddings(email_ids, embs)
         # utils.get_similar_users(email_ids, embs)
         plots.plot_with_tsne(email_ids, embs, display_hover=False)
+
+    def run_validation(self, epoch, val_data, neg_val_data, w2v):
+        """
+        runs validation every configured number of epochs and save the model, if it gives a better validation metric
+        """
+        if epoch % self.val_after_epoch == 0:
+            start = time.time()
+            print 'Starting with validation'
+            res = metrics.evaluate_metrics(self, 'Model2Deeper', w2v, val_data, neg_val_data, k=500,
+                                           metrics=['hits@k'])
+            hits_res = res['hits@k']
+            if hits_res[0] > self.best_val:
+                self.best_val = hits_res[0]
+                file_name = constants.RUN_ID + '_model.pth'
+                self.save(file_name)
+            end = time.time()
+            print 'validation time:', (end - start)
 
     def predict(self, email, w2v):
         loss_criteria = nn.MSELoss()

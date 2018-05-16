@@ -1,2 +1,3 @@
-# organizational-roles
-Organizational Role Detection using Enron Dataset
+# Analyzing Users within Organizations
+
+Social engineering (“phishing”) attacks are a major threat to the security of governments, organizations, and individuals. Particularly dangerous are attacks launched from within an organization by compromised user email accounts. In this work we explore unsupervised learning techniques to build representations of the typical behavior of users in an organization which could form the basis for detecting abnormal behavior from a compromised email account. We come up with different generative and discriminative neural network architectures and evaluate them using metrics like Hierarchy Prediction, Hits@K, etc. We observe that while some models are able to learn about network and hierarchy, other models tend to learn more about users and their behavior. For more details one can refer to project report & poster
