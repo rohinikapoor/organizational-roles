@@ -1,4 +1,4 @@
-import matplotlib as mpl;
+import matplotlib as mpl
 
 mpl.use('Agg')  # The cluster cannot process other graphic engines
 import matplotlib.pyplot as plt
@@ -240,7 +240,6 @@ if __name__ == '__main__':
     x = np.arange(0.1, 3.1, 0.1)
     train, val = utils.threshold_result_parser('../resources/model3_25ep.txt')
     plot_thresholds(x, train, val, title='Threshold experiments for SR Model', filename='model3_threshold')
-
 
     # labels = ['SR Model', 'PV Model', 'Discriminative']
     # ymax = 1.0
